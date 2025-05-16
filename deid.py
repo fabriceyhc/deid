@@ -1,51 +1,182 @@
 import re
 import os
 import spacy
+import pandas as pd
+from tqdm import tqdm
 from transformers import AutoTokenizer, AutoModelForTokenClassification, pipeline
+import unicodedata
+import json
 
-class HuggingfaceMasker:
-    def __init__(self, model_name="StanfordAIMI/stanford-deidentifier-only-i2b2", cache_dir="/data2/.shared_models"):
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name, cache_dir=cache_dir)
-        self.model = AutoModelForTokenClassification.from_pretrained(model_name)
-        self.nlp = pipeline("ner", model=self.model, tokenizer=self.tokenizer)
+#######################################################################
+#  Maskers                                                            
+#######################################################################
+  
+class RegexMasker:
+    """
+    A RegEx-based masker class that:
+      - Normalizes text (NFKC, replaces fancy dashes and non-breaking spaces).
+      - Uses a conservative multi-word capitalized pattern for 'NAME'.
+      - After matching, ensures *all* tokens in the matched phrase are present in 'known_names'.
+        This prevents something like 'Recreational Marijuna' from being treated as a name
+        unless both words appear in 'known_names'.
+    """
 
-    def get_entity_spans(self, text, entity_type=None):
+    def __init__(self, known_names=None, debug=False):
+        """
+        :param known_names: An optional list or set of valid name tokens (e.g., 'John', 'Doe').
+        :param debug:       If True, prints debug info.
+        """
+        self.debug = debug
+        self.known_names = set(known_names or [])
+
+        # This pattern matches 2-3 capitalized "words":
+        #   1) \b(?P<name>[A-Z][a-z]+   -> first capitalized word
+        #   2) (?:\s+[A-Z][a-z]+)      -> second capitalized word
+        #   3) (?:\s+[A-Z][a-z]+)?     -> optional third capitalized word
+        #
+        # You can adapt it to allow single-letter initials with periods if desired,
+        # or refine it further for hyphenated names, etc.
+        self.patterns = [
+            (r"\b(?P<name>[A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,2})\b", "PERSON"),
+            (r"(0?[1-9]|1[0-2])[-/](0?[1-9]|[12]\d|3[01])[-/]((?:19|20)\d{2}|\d{2})", "DATE"),
+            (r"\d{3}-\d{2}-\d{4}", "SSN"),
+            (r"(?:\+?1[-.\s]?)?(?:\(\d{3}\)|\d{3})[-.\s]?\d{3}[-.\s]?\d{4}(?=[^0-9]|$)", "PHONE"),
+            (r"[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}(?=[^a-zA-Z0-9._%+\-]|$)", "EMAIL"),
+            (r"(?:MRN\s*\d{5,}|\d{7,})", "MRN"),
+            (r"\d{1,5}\s+(?:[A-Za-z0-9]+\s?){1,6},\s?[A-Za-z]+(?:[ -][A-Za-z]+)*,\s?[A-Z]{2},\s?\d{5}", "ADDRESS"),
+        ]
+
+    def get_entity_spans(self, text, entity_types=None):
         """
         Return a list of (start, end, label) for each detected entity.
-        If entity_type is provided, only return spans of that type.
+
+        :param text:         The input text to search for patterns.
+        :param entity_types: List or single string specifying which labels to return.
+                             If None, returns all patterns.
+        :return: A list of (start_index, end_index, label).
         """
+
+        # Convert entity_types to list if it's just a string
+        if isinstance(entity_types, str):
+            entity_types = [entity_types]
+
+        found_spans = []
+        for pattern, label in self.patterns:
+            # Skip if user requested specific labels
+            if entity_types and label not in entity_types:
+                continue
+
+            for match in re.finditer(pattern, text):
+                start, end = match.start(), match.end()
+                matched_str = text[start:end]
+
+                # If this is a NAME match, enforce the known-names check
+                if label == "PERSON" and self.known_names:
+                    # Extract alphabetical tokens
+                    tokens = re.findall(r"[A-Za-z]+", matched_str)
+                    # If NONE of the tokens is in known_names, skip
+                    if not any(token in self.known_names for token in tokens):
+                        continue
+
+                found_spans.append((start, end, label))
+                if self.debug:
+                    print(f"[DEBUG] Matched '{matched_str}' as {label}")
+
+        return found_spans
+    
+
+class HuggingfaceMasker:
+    def __init__(self, model_name="StanfordAIMI/stanford-deidentifier-only-i2b2", cache_dir="./models"):
+        self.tokenizer = AutoTokenizer.from_pretrained(model_name) #, cache_dir=cache_dir)
+        self.model = AutoModelForTokenClassification.from_pretrained(model_name)
+        self.nlp = pipeline("ner", model=self.model, tokenizer=self.tokenizer, device=0)
+
+    def get_entity_spans(self, text, entity_types=None):
+        """
+        Return a list of (start, end, label) for each detected entity.
+        If entity_types is provided, only return spans that match
+        (case-insensitive, partial substring) any of them.
+        """
+        if not text.strip():
+            return []
+
+        # Normalize entity_types to a list
+        if isinstance(entity_types, str):
+            entity_types = [entity_types]
+
         ner_results = self.nlp(text)
         ner_results = sorted(ner_results, key=lambda x: x['start'])
 
         spans = []
         for entity in ner_results:
             label = entity['entity']
-            if entity_type is not None and entity_type not in label:
-                continue
+            
+            # If entity_types is specified, check partial substring match, ignoring case
+            if entity_types is not None:
+                if not any(e_type.lower() in label.lower() for e_type in entity_types):
+                    continue
+
             spans.append((entity["start"], entity["end"], label))
         return spans
+    
 
 class SpaCyNERMasker:
     def __init__(self, model_name="en_core_web_trf"):
+        spacy.prefer_gpu()
         self.nlp = spacy.load(model_name)
 
-    def get_entity_spans(self, text, entity_type=None):
+    def get_entity_spans(self, text, entity_types=None):
         """
         Return a list of (start, end, label) for each detected entity.
-        If entity_type is provided, only return spans of that type.
-        Also removes 'PRODUCT' entities.
+        If entity_types is provided, only return spans matching any of them
+        (case-insensitive, partial substring). Also removes 'PRODUCT' entities.
         """
+        if not text.strip():
+            return []
+
+        # Normalize entity_types to a list
+        if isinstance(entity_types, str):
+            entity_types = [entity_types]
+
         doc = self.nlp(text)
         entities = [(ent.start_char, ent.end_char, ent.label_) for ent in doc.ents]
 
-        # Filter by entity_type if specified
-        if entity_type is not None:
-            entities = [e for e in entities if entity_type in e[2]]
-
-        # Remove PRODUCTS
-        entities = [e for e in entities if "PRODUCT" not in e[2]]
+        # Filter by partial substring match, ignoring case
+        if entity_types is not None:
+            filtered = []
+            for start, end, label in entities:
+                if any(e_type.lower() in label.lower() for e_type in entity_types):
+                    filtered.append((start, end, label))
+            entities = filtered
 
         return entities
+    
+#######################################################################
+# Analysis Functions
+#######################################################################
+    
+    import json
+
+def load_names(file_path: str = "./data/names.json", as_set: bool = True):
+    """
+    Loads a local names.json file (with 'female', 'male', and 'last' lists)
+    and returns a unified list (or set) of names.
+
+    :param file_path: The local path to 'names.json'.
+    :param as_set:    If True, return the names as a set; otherwise, return them as a list.
+
+    :return: A set or list of names combined from the 'female', 'male', and 'last' lists.
+    """
+    with open(file_path, 'r', encoding='utf-8') as f:
+        names_dict = json.load(f)
+
+    combined = (
+        names_dict.get("female", []) +
+        names_dict.get("male", []) +
+        names_dict.get("last", [])
+    )
+    
+    return set(combined) if as_set else combined
 
 def replace_consecutive_NER_tags(text):
     # Regex pattern to match substrings in brackets and find consecutive occurrences
@@ -100,28 +231,38 @@ class Deidentifier:
         """
         self.maskers = maskers
         self.default_mask = default_mask
+        tqdm.pandas()
 
-    def deidentify(self, text, entity_type=None):
+    def deidentify(self, text, entity_types=None):
         """
-        Runs all maskers on the given text, merges identified PHI spans, and masks them out.
-        If entity_type is specified, only mask entities of that type.
+        De-identify text by masking spans identified by all maskers.
+        If entity_types is specified, only mask those entity types
+        (using case-insensitive, partial substring match).
         """
+        if not text.strip():
+            return text
+
         all_spans = []
         for m in self.maskers:
-            spans = m.get_entity_spans(text, entity_type=entity_type)
+            spans = m.get_entity_spans(text, entity_types=entity_types)
             all_spans.extend(spans)
 
-        # Merge overlapping spans from all models
-        merged_spans = merge_spans(all_spans)
+        # Preserve acronyms (all caps) if NOT labeled as person (case-insensitive, partial substring match)
+        filtered_spans = []
+        for start, end, label in all_spans:
+            token_text = text[start:end]
+            # If token_text is ALL CAPS and the label does not contain 'PERSON' (ignore case),
+            # skip masking it.
+            if token_text.isupper() and ('person' not in label.lower()):
+                continue
+            filtered_spans.append((start, end, label))
 
-        # Mask the text once
+        merged_spans = merge_spans(filtered_spans)
         masked_text = mask_text(text, merged_spans, mask=self.default_mask)
-
-        # Optionally replace consecutive tags if needed
         masked_text = replace_consecutive_NER_tags(masked_text)
         return masked_text
 
-    def deidentify_csv(self, input_csv_path, output_csv_path, column_name, entity_type=None):
+    def deidentify_csv(self, input_csv_path, output_csv_path, column_name, entity_types=None):
         """
         1. Reads a CSV file from input_csv_path
         2. Applies de-identification to 'column_name'
@@ -130,8 +271,8 @@ class Deidentifier:
         :param input_csv_path: Path to the input CSV file
         :param output_csv_path: Path where the output CSV file will be saved
         :param column_name: The name of the column in which we have the text to de-identify
-        :param entity_type: If specified, only mask entities matching this label 
-                            (e.g., "PERSON"). Otherwise, mask all detected entities.
+        :param entity_types: list/string of entity types to mask. 
+                            (e.g. ["PERSON", "ORG"]) or just "PERSON"
         """
         # Read the CSV file
         df = pd.read_csv(input_csv_path)
@@ -144,38 +285,41 @@ class Deidentifier:
             # Handle missing or NaN values gracefully
             if not isinstance(text, str):
                 return text
-            return self.deidentify(text, entity_type=entity_type)
+            return self.deidentify(text, entity_types=entity_types)
 
-        df[column_name] = df[column_name].apply(deid_func)
+        df[column_name] = df[column_name].progress_apply(deid_func)
 
         # Save the updated DataFrame to a new CSV
         df.to_csv(output_csv_path, index=False)
 
-#############################
-# Example usage
-#############################
+#######################################################################
+# Main Entry Point
+#######################################################################
 
 if __name__ == "__main__":
 
     # CUDA_VISIBLE_DEVICES=0 python -m deid
 
-    spacy_masker = SpaCyNERMasker(model_name="en_core_web_trf")
-    hf_masker_1 = HuggingfaceMasker(model_name="StanfordAIMI/stanford-deidentifier-base")
-    hf_masker_2 = HuggingfaceMasker(model_name="obi/deid_roberta_i2b2")
+    # spacy_masker = SpaCyNERMasker(model_name="en_core_web_sm") # "en_core_web_trf" "en_core_web_sm"
+    # hf_masker_1  = HuggingfaceMasker(model_name=".\models\stanford-deidentifier-base")
+    # hf_masker_2  = HuggingfaceMasker(model_name=".\models\deid_roberta_i2b2")
+    regex_masker = RegexMasker(known_names=load_names(), debug=False)
 
     # Instantiate the Deidentifier class with a list of maskers
-    deidentifier = Deidentifier([spacy_masker, hf_masker_1, hf_masker_2])
+    deidentifier = Deidentifier([regex_masker])
+    # deidentifier = Deidentifier([spacy_masker, regex_masker])
+    # deidentifier = Deidentifier([spacy_masker, hf_masker_1, hf_masker_2])
 
     # examples = [
-    #     "Fabrice denies snorting Klonopin, but Hritika is skeptical.",
-    #     "Panayiotis denies snorting Xanax, but DIVYANSH is skeptical.",
+    #     "Patient denies snorting Klonopin, but Fabrice is skeptical.",
+    #     "Patient denies snorting Xanax, but Panayiotis is skeptical.",
     #     "Patient John Doe (DOB: 01/01/1980) was admitted with symptoms of severe anxiety and was prescribed Xanax for immediate relief.",
     #     "On 03/15/2024, Jane Smith was seen by Dr. Emily Johnson at Lakeside Medical Center for a follow-up regarding her chronic insomnia. Ambien dosage was adjusted.",
-    #     "Michael Brown, a 45-year-old with a history of type 2 diabetes, was advised to continue with their current medication, Metformin, and to monitor their blood sugar levels closely.",
+    #     "Patient Mr. Brown, a 45-year-old with a history of type 2 diabetes, was advised to continue with their current medication, Metformin, and to monitor their blood sugar levels closely.",
     #     "The blood test results from 04/10/2024 for Alex Martinez indicate a need to modify the current treatment plan to include Lipitor for better cholesterol management.",
-    #     "Sarah Wilson's insurance provider, HealthFirst Insurance, has approved coverage for the prescribed Humira starting from 05/01/2024.",
+    #     "Patient Ms. Wilson's insurance provider, HealthFirst Insurance, has approved coverage for the prescribed Humira starting from 05/01/2024.",
     #     "During the consultation on 02/20/2024, Lisa Chang disclosed a family history of glaucoma. Considering this, Timolol eye drops were prescribed as a precautionary measure.",
-    #     "Kevin Lee underwent a successful laparoscopic cholecystectomy on 01/25/2024 and is scheduled for a follow-up on 02/15/2024 to assess the need for further medication adjustments, including the possibility of incorporating Ursodiol.",
+    #     "Patient Lee underwent a successful laparoscopic cholecystectomy on 01/25/2024 and is scheduled for a follow-up on 02/15/2024 to assess the need for further medication adjustments, including the possibility of incorporating Ursodiol.",
     # ]
 
     # for i, ex in enumerate(examples, 1):
@@ -185,16 +329,36 @@ if __name__ == "__main__":
     base_path = "F:/Inbound/CTSI/CLShover_24_22-001273/Data"
     
     PHI_candidates = [
-        ("Problem_Lists.csv", "PROBLEM_DESCRIPTION"),
-        ("Labs.csv", "RESULT"),
-        ("Social_History.csv", "ALCOHOL_COMMENTS"),
-        ("Social_History.csv", "ILLICIT_DRUG_COMMENTS"),
-        ("Provider_Notes.csv", "NOTE_TEXT"),
+        ("Problem_Lists.csv", "PROBLEM_DESCRIPTION"),       # finished on full pipeline with en_core_web_trf + regex
+        ("Social_History.csv", "ILLICIT_DRUG_COMMENTS"),    # finished on full pipeline with en_core_web_trf + regex
+        ("Social_History.csv", "ALCOHOL_COMMENTS"),         # finished with regex only
+        ("Provider_Notes.csv", "NOTE_TEXT"),                # finished with regex only
+        ("Labs.csv", "RESULT"),                             # finished on full pipeline with en_core_web_trf + regex
+    ]
+
+    hipaa_ner_labels = [
+        "PERSON",       # For names (patient, provider, etc.)
+        "GPE",          # For city/state/region, etc.
+        "LOCATION",     # Other location labels
+        "ORG",          # Organizations (e.g., hospitals, clinics, employers)
+        "DATE",         # Dates (DOB, admission date, etc.)
+        "TIME",         # Times, if your model distinguishes them separately
+        "PHONE",        # Phone numbers
+        "EMAIL",        # Emails
+        "CONTACT",      # Could include phone, fax, email, etc.
+        "ID",           # Could include SSN, MRN, account, license, etc.
+        "SSN",          # Social Security Number specifically
+        "MRN",          # Medical Record Number specifically
+        "URL",          # Websites or IP addresses
+        "FAC",          # Facility names (some models use FAC for “facility”)
+        "PRODUCT",      # Sometimes used for device identifiers
+        "LICENSE",      # Certificate/license numbers (if your model uses this label)
     ]
 
     for filename, column in PHI_candidates:
         deidentifier.deidentify_csv(
             input_csv_path=os.path.join(base_path, filename),
-            output_csv_path=os.path.join(base_path, filename.replace(".csv", "_deid.csv")),
+            output_csv_path=os.path.join(base_path, filename.replace(".csv", "_re.csv")),
             column_name=column,
+            entity_types=hipaa_ner_labels
         )
