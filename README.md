@@ -117,7 +117,7 @@ Below is a list of available command-line arguments (`[OPTIONS]`):
 
 Here are various examples demonstrating how to use `deid.py`:
 
-### 1. De-identify a single string 
+### 1. De-identify a single string (regex default)
 This is the simplest usage, relying on the default RegexMasker and printing to console.
 
 ```
@@ -131,7 +131,7 @@ This example uses the SpaCy masker with the `en_core_web_sm` model, targets `PER
 python deid.py --text "Call Dr. Smith at Mass General." --maskers spacy --spacy_model en_core_web_trf --output_text_file masked_output.txt --entity_types PERSON
 ```
 
-### 3. 
+### 3. Using all deidentification methods simultaneously
 This example demonstrates a comprehensive approach using all available maskers (regex, spacy, huggingface)
 ```
 python deid.py --input_csv patient_records.csv --column_name note_text --output_csv patient_records_deid.csv --maskers regex spacy huggingface
