@@ -24,6 +24,35 @@ This script provides a flexible command-line tool for de-identifying text data f
 
 * Python 3.7+
 
+### Environment
+
+#### 1. Install Miniconda (Recommended for Windows)
+
+We recommend using [Miniconda](https://docs.conda.io/en/latest/miniconda.html) to manage your Python environments, especially on Windows. Miniconda is a lightweight alternative to Anaconda and simplifies package and environment management.
+
+- **Download Miniconda:**
+  - Visit the [official Miniconda download page](https://www.anaconda.com/docs/getting-started/miniconda/install#quickstart-install-instructions) for quickstart instructions and alternative installers for all platforms.
+  - Choose the installer appropriate for your operating system (Windows, macOS, or Linux).
+
+- **Install Miniconda:**
+  - Follow the instructions for your platform. On Windows, run:
+  ```
+curl https://repo.anaconda.com/miniconda/Miniconda3-latest-Windows-x86_64.exe -o .\miniconda.exe
+start /wait "" .\miniconda.exe /S
+del .\miniconda.exe
+  ```
+
+#### 2. Create a Conda Environment with Python
+
+After installing Miniconda, open your terminal (Anaconda Prompt on Windows, or your system terminal on macOS/Linux) and run:
+
+```bash
+conda create -n deid-env python=3.13
+conda activate deid-env
+```
+
+This creates and activates a new environment named `deid-env` with Python 3.13. You can then proceed to install the required dependencies as described below.
+
 ### Dependencies
 
 1.  **Clone the repository.**
