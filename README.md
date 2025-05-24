@@ -36,11 +36,12 @@ We recommend using [Miniconda](https://docs.conda.io/en/latest/miniconda.html) t
 
 - **Install Miniconda:**
   - Follow the instructions for your platform. On Windows, run:
-  ```
+
+```
 curl https://repo.anaconda.com/miniconda/Miniconda3-latest-Windows-x86_64.exe -o .\miniconda.exe
 start /wait "" .\miniconda.exe /S
 del .\miniconda.exe
-  ```
+```
 
 #### 2. Create a Conda Environment with Python
 
