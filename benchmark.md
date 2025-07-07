@@ -7,8 +7,8 @@ Successfully created and executed a comprehensive benchmark that tests both **sp
 ## 📊 Key Results
 
 ### Performance Metrics Tested
-- **Input**: `/home/fabrice/deid/test/data/unprocessed/test.csv` (5 real medical texts)
-- **Expected Output**: `/home/fabrice/deid/test/data/processed/test_deid.csv` (ground truth)
+- **Input**: `./test/data/unprocessed/test.csv` (5 real medical texts)
+- **Expected Output**: `./test/data/processed/test_deid.csv` (ground truth)
 - **Generated Outputs**: 4 different masker configurations tested
 
 ### Speed vs Accuracy Trade-offs
@@ -39,7 +39,7 @@ Successfully created and executed a comprehensive benchmark that tests both **sp
 
 ## 📁 Generated Output Files
 
-All files saved to `/home/fabrice/deid/test/data/processed/`:
+All files saved to `./test/data/processed/`:
 
 1. **`test_deid_regex_only.csv`** - Fast processing, basic accuracy
 2. **`test_deid_spacy_only.csv`** - Moderate speed, good accuracy  
