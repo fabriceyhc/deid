@@ -1,4 +1,6 @@
 pandas
-spacy
+# spacy
 transformers
 torch
+numpy
+tqdm

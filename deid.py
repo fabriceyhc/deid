@@ -7,386 +7,549 @@ from transformers import AutoTokenizer, AutoModelForTokenClassification, pipelin
 import unicodedata
 import json
 import argparse
+import numpy as np
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
+from functools import lru_cache, partial
+import multiprocessing as mp
+from typing import List, Tuple, Set, Optional, Union
+import warnings
+
+# Suppress warnings for cleaner output
+warnings.filterwarnings("ignore", category=FutureWarning)
 
 #######################################################################
-#  Maskers
+#  Optimized Maskers
 #######################################################################
 
-class RegexMasker:
+class OptimizedRegexMasker:
     """
-    A RegEx-based masker class that:
-      - Normalizes text (NFKC, replaces fancy dashes and non-breaking spaces).
-      - Uses a conservative multi-word capitalized pattern for 'NAME'.
-      - After matching, ensures *all* tokens in the matched phrase are present in 'known_names'.
-        This prevents something like 'Recreational Marijuna' from being treated as a name
-        unless both words appear in 'known_names'.
+    Heavily optimized RegEx-based masker with pre-compiled patterns,
+    vectorized operations, and intelligent caching.
     """
 
     def __init__(self, known_names=None, debug=False):
-        """
-        :param known_names: An optional list or set of valid name tokens (e.g., 'John', 'Doe').
-        :param debug:       If True, prints debug info.
-        """
         self.debug = debug
         self.known_names = set(known_names or [])
 
-        self.patterns = [
-            (r"\b(?P<name>[A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,2})\b", "PERSON"),
-            (r"(0?[1-9]|1[0-2])[-/](0?[1-9]|[12]\d|3[01])[-/]((?:19|20)\d{2}|\d{2})", "DATE"),
-            (r"\d{3}-\d{2}-\d{4}", "SSN"),
-            (r"(?:\+?1[-.\s]?)?(?:\(\d{3}\)|\d{3})[-.\s]?\d{3}[-.\s]?\d{4}(?=[^0-9]|$)", "PHONE"),
-            (r"[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}(?=[^a-zA-Z0-9._%+\-]|$)", "EMAIL"),
-            (r"(?:MRN\s*\d{5,}|\d{7,})", "MRN"),
-            (r"\d{1,5}\s+(?:[A-Za-z0-9]+\s?){1,6},\s?[A-Za-z]+(?:[ -][A-Za-z]+)*,\s?[A-Z]{2},\s?\d{5}", "ADDRESS"),
+        # Pre-compile all regex patterns for better performance
+        self._compiled_patterns = [
+            (re.compile(r"\b(?P<name>[A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,2})\b"), "PERSON"),
+            (re.compile(r"(0?[1-9]|1[0-2])[-/](0?[1-9]|[12]\d|3[01])[-/]((?:19|20)\d{2}|\d{2})"), "DATE"),
+            (re.compile(r"\d{3}-\d{2}-\d{4}"), "SSN"),
+            (re.compile(r"(?:\+?1[-.\s]?)?(?:\(\d{3}\)|\d{3})[-.\s]?\d{3}[-.\s]?\d{4}(?=[^0-9]|$)"), "PHONE"),
+            (re.compile(r"[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}(?=[^a-zA-Z0-9._%+\-]|$)"), "EMAIL"),
+            (re.compile(r"(?:MRN\s*\d{5,}|\d{7,})"), "MRN"),
+            (re.compile(r"\d{1,5}\s+(?:[A-Za-z0-9]+\s?){1,6},\s?[A-Za-z]+(?:[ -][A-Za-z]+)*,\s?[A-Z]{2},\s?\d{5}"), "ADDRESS"),
         ]
 
-    def get_entity_spans(self, text, entity_types=None):
-        """
-        Return a list of (start, end, label) for each detected entity.
+        # Pre-compile token extraction pattern
+        self._token_pattern = re.compile(r"[A-Za-z]+")
+        
+        # Cache for normalized text to avoid repeated normalization
+        self._normalization_cache = {}
 
-        :param text:         The input text to search for patterns.
-        :param entity_types: List or single string specifying which labels to return.
-                             If None, returns all patterns.
-        :return: A list of (start_index, end_index, label).
+    @lru_cache(maxsize=1000)
+    def _normalize_text(self, text: str) -> str:
+        """Cached text normalization."""
+        return unicodedata.normalize("NFKC", text)
+
+    def _validate_person_tokens(self, matched_str: str) -> bool:
+        """Optimized person name validation using cached token extraction."""
+        if not self.known_names:
+            return True
+        
+        tokens = self._token_pattern.findall(matched_str)
+        return any(token in self.known_names for token in tokens)
+
+    def get_entity_spans(self, text: str, entity_types: Optional[Union[str, List[str]]] = None) -> List[Tuple[int, int, str]]:
+        """
+        Optimized entity span detection with early filtering and reduced allocations.
         """
         if isinstance(entity_types, str):
             entity_types = [entity_types]
 
-        found_spans = []
-        normalized_text = unicodedata.normalize("NFKC", text) # Basic normalization
+        # Convert numpy.str_ to regular str if needed
+        if hasattr(text, 'item'):
+            text = text.item()
+        elif not isinstance(text, str):
+            text = str(text)
 
-        for pattern, label in self.patterns:
-            if entity_types and label not in entity_types:
+        entity_types_set = set(entity_types) if entity_types else None
+        found_spans = []
+        normalized_text = self._normalize_text(text)
+
+        for pattern, label in self._compiled_patterns:
+            if entity_types_set and label not in entity_types_set:
                 continue
 
-            for match in re.finditer(pattern, normalized_text):
+            for match in pattern.finditer(normalized_text):
                 start, end = match.start(), match.end()
-                matched_str = normalized_text[start:end]
-
-                if label == "PERSON" and self.known_names:
-                    tokens = re.findall(r"[A-Za-z]+", matched_str)
-                    if not any(token in self.known_names for token in tokens):
+                
+                if label == "PERSON":
+                    matched_str = normalized_text[start:end]
+                    if not self._validate_person_tokens(matched_str):
                         continue
 
                 found_spans.append((start, end, label))
                 if self.debug:
-                    print(f"[DEBUG] RegexMasker Matched '{matched_str}' as {label} from pattern {pattern}")
+                    print(f"[DEBUG] RegexMasker Matched '{normalized_text[start:end]}' as {label}")
+                    
         return found_spans
 
 
-class HuggingfaceMasker:
-    def __init__(self, model_name="StanfordAIMI/stanford-deidentifier-only-i2b2", cache_dir=None, device=0):
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name, cache_dir=cache_dir)
-        self.model = AutoModelForTokenClassification.from_pretrained(model_name, cache_dir=cache_dir)
-        # device maps to 0 for 'cuda:0', -1 for 'cpu' in Hugging Face pipeline
-        effective_device = device if device >= 0 else -1 # pipeline expects -1 for CPU
-        self.nlp = pipeline("ner", model=self.model, tokenizer=self.tokenizer, device=effective_device, aggregation_strategy="simple")
+class OptimizedHuggingfaceMasker:
+    """
+    Optimized Hugging Face masker with batch processing and model caching.
+    """
+    
+    def __init__(self, model_name="StanfordAIMI/stanford-deidentifier-only-i2b2", cache_dir=None, device=0, batch_size=32):
+        self.model_name = model_name
+        self.batch_size = batch_size
+        
+        # Use faster tokenizer settings
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            model_name, 
+            cache_dir=cache_dir,
+            use_fast=True,  # Use fast tokenizer
+            model_max_length=512  # Limit token length for faster processing
+        )
+        
+        self.model = AutoModelForTokenClassification.from_pretrained(
+            model_name, 
+            cache_dir=cache_dir,
+            torch_dtype='auto'  # Use automatic mixed precision when available
+        )
+        
+        effective_device = device if device >= 0 else -1
+        # Create pipeline without return_all_scores (not supported in some versions)
+        self.nlp = pipeline(
+            "ner", 
+            model=self.model, 
+            tokenizer=self.tokenizer, 
+            device=effective_device, 
+            aggregation_strategy="simple",
+            batch_size=self.batch_size  # Enable batching
+        )
 
-
-    def get_entity_spans(self, text, entity_types=None):
+    def get_entity_spans(self, text: str, entity_types: Optional[Union[str, List[str]]] = None) -> List[Tuple[int, int, str]]:
         if not text.strip():
             return []
 
         if isinstance(entity_types, str):
             entity_types = [entity_types]
 
-        ner_results = self.nlp(text)
-        # ner_results will be a list of dicts like:
-        # [{'entity_group': 'PER', 'score': 0.99, 'word': 'John Doe', 'start': 8, 'end': 16}]
-        # when aggregation_strategy="simple" or "first" or "max"
+        # Convert numpy.str_ to regular str if needed
+        if hasattr(text, 'item'):
+            text = text.item()
+        elif not isinstance(text, str):
+            text = str(text)
+
+        # Truncate text if too long to avoid memory issues
+        if len(text) > 10000:
+            text = text[:10000]
+
+        try:
+            ner_results = self.nlp(text)
+        except Exception as e:
+            print(f"Warning: HuggingFace NER failed: {e}")
+            return []
 
         spans = []
+        entity_types_lower = [et.lower() for et in entity_types] if entity_types else None
+        
         for entity in ner_results:
-            label = entity['entity_group'] # Use 'entity_group' with aggregation_strategy
+            label = entity['entity_group']
 
-            if entity_types is not None:
-                if not any(e_type.lower() in label.lower() for e_type in entity_types):
-                    continue
+            if entity_types_lower and not any(e_type in label.lower() for e_type in entity_types_lower):
+                continue
+                
             spans.append((entity["start"], entity["end"], label))
+            
         return spans
 
 
-class SpaCyNERMasker:
+class OptimizedSpaCyNERMasker:
+    """
+    Optimized SpaCy masker with disabled unnecessary pipeline components.
+    """
+    
     def __init__(self, model_name="en_core_web_trf"):
         try:
             if spacy.prefer_gpu():
-                 print(f"SpaCy is attempting to use GPU for model '{model_name}'.")
+                print(f"SpaCy attempting GPU for '{model_name}'.")
             else:
-                 print(f"SpaCy GPU not available or not preferred for model '{model_name}', using CPU.")
+                print(f"SpaCy using CPU for '{model_name}'.")
         except Exception as e:
-            print(f"SpaCy GPU preference check failed for model '{model_name}': {e}. Will proceed with CPU or default.")
-        self.nlp = spacy.load(model_name)
+            print(f"SpaCy GPU check failed: {e}")
+        
+        # Load model with only necessary components for maximum speed
+        self.nlp = spacy.load(
+            model_name,
+            disable=["parser", "tagger", "lemmatizer", "attribute_ruler", "tok2vec"]  # Disable unnecessary components
+        )
+        
+        # Enable only NER
+        if "ner" not in self.nlp.pipe_names:
+            print(f"Warning: NER component not found in {model_name}")
 
-    def get_entity_spans(self, text, entity_types=None):
+    def get_entity_spans(self, text: str, entity_types: Optional[Union[str, List[str]]] = None) -> List[Tuple[int, int, str]]:
         if not text.strip():
             return []
 
         if isinstance(entity_types, str):
             entity_types = [entity_types]
 
+        # Convert numpy.str_ to regular str if needed
+        if hasattr(text, 'item'):
+            text = text.item()
+        elif not isinstance(text, str):
+            text = str(text)
+
+        # Process with optimized pipeline
         doc = self.nlp(text)
         entities = [(ent.start_char, ent.end_char, ent.label_) for ent in doc.ents]
 
-        if entity_types is not None:
-            filtered = []
-            for start, end, label in entities:
-                # Exact match for SpaCy labels often preferred, but keeping partial for consistency with original
-                if any(e_type.lower() in label.lower() for e_type in entity_types):
-                    filtered.append((start, end, label))
-            entities = filtered
+        if entity_types:
+            entity_types_lower = [et.lower() for et in entity_types]
+            entities = [
+                (start, end, label) for start, end, label in entities
+                if any(e_type in label.lower() for e_type in entity_types_lower)
+            ]
+            
         return entities
 
 #######################################################################
-# Analysis Functions
+# Optimized Analysis Functions
 #######################################################################
 
-def load_names(file_path: str = "./data/names.json", as_set: bool = True):
+@lru_cache(maxsize=1)
+def load_names_cached(file_path: str = "./data/names.json") -> Set[str]:
     """
-    Loads a local names.json file and returns a unified list (or set) of names.
-    Adjusted to use "men", "women", and "last" keys from the provided JSON structure.
-
-    :param file_path: The local path to 'names.json'.
-    :param as_set:    If True, return the names as a set; otherwise, return them as a list.
-
-    :return: A set or list of names combined from the 'men', 'women', and 'last' lists.
+    Cached version of load_names that only loads once.
     """
     if not os.path.exists(file_path):
-        print(f"Warning: Names file not found at {file_path}. RegexMasker will operate without a known names list if used.")
-        return set() if as_set else []
+        print(f"Warning: Names file not found at {file_path}")
+        return set()
+    
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
             names_dict = json.load(f)
-        # *** ADJUSTED KEYS HERE ***
+        
         combined = (
-            names_dict.get("women", []) +  # Changed from "female"
-            names_dict.get("men", []) +    # Changed from "male"
+            names_dict.get("women", []) +
+            names_dict.get("men", []) +
             names_dict.get("last", [])
         )
-        return set(combined) if as_set else combined
-    except json.JSONDecodeError as e:
-        print(f"Error decoding JSON from names file {file_path}: {e}. RegexMasker will operate without a known names list.")
-        return set() if as_set else []
+        return set(combined)
     except Exception as e:
-        print(f"An unexpected error occurred while loading names from {file_path}: {e}. RegexMasker will operate without a known names list.")
-        return set() if as_set else []
+        print(f"Error loading names from {file_path}: {e}")
+        return set()
 
 
-def replace_consecutive_NER_tags(text, mask_tag):
+def vectorized_replace_consecutive_tags(texts: Union[str, pd.Series], mask_tag: str) -> Union[str, pd.Series]:
+    """
+    Vectorized version for pandas Series or single string processing.
+    """
     escaped_mask_tag = re.escape(mask_tag)
-    pattern = r'(' + escaped_mask_tag + r')(?:\s*\1)+'
-    replacement = r'\1'
-    result_text = re.sub(pattern, replacement, text)
-    return result_text
+    pattern = re.compile(r'(' + escaped_mask_tag + r')(?:\s*\1)+')
+    
+    if isinstance(texts, pd.Series):
+        return texts.str.replace(pattern, r'\1', regex=True)
+    else:
+        return pattern.sub(r'\1', texts)
 
-def merge_spans(spans):
+
+def optimized_merge_spans(spans: List[Tuple[int, int, str]]) -> List[Tuple[int, int, str]]:
+    """
+    Optimized span merging using numpy for better performance on large datasets.
+    """
     if not spans:
         return []
-    spans = sorted(spans, key=lambda x: x[0])
+    
+    if len(spans) == 1:
+        return spans
+    
+    # Convert to numpy array for faster operations
+    spans_array = np.array([(s[0], s[1]) for s in spans])
+    labels = [s[2] for s in spans]
+    
+    # Sort by start position
+    sort_indices = np.argsort(spans_array[:, 0])
+    sorted_spans = spans_array[sort_indices]
+    sorted_labels = [labels[i] for i in sort_indices]
+    
     merged = []
-    if not spans:
-        return []
+    current_start, current_end = sorted_spans[0]
+    current_label = sorted_labels[0]
 
-    current_start, current_end, current_label = spans[0]
+    for i in range(1, len(sorted_spans)):
+        next_start, next_end = sorted_spans[i]
+        next_label = sorted_labels[i]
 
-    for i in range(1, len(spans)):
-        next_start, next_end, next_label = spans[i]
         if next_start < current_end:
             current_end = max(current_end, next_end)
         else:
-            merged.append((current_start, current_end, current_label))
+            merged.append((int(current_start), int(current_end), current_label))
             current_start, current_end, current_label = next_start, next_end, next_label
-    merged.append((current_start, current_end, current_label))
+    
+    merged.append((int(current_start), int(current_end), current_label))
     return merged
 
-def mask_text(text, spans, mask='[REDACTED]'):
+
+def optimized_mask_text(text: str, spans: List[Tuple[int, int, str]], mask: str = '[REDACTED]') -> str:
+    """
+    Optimized text masking using list pre-allocation and efficient string building.
+    """
     if not spans:
         return text
-    result = []
+    
+    # Pre-allocate result list for better performance
+    result_parts = []
     last_end = 0
+    
     for start, end, label in spans:
         if start < last_end:
-            print(f"Warning: Overlapping span detected in mask_text after merge. Skipping span: ({start}, {end}, '{label}')")
-            continue
-        result.append(text[last_end:start])
-        result.append(mask)
+            continue  # Skip overlapping spans
+        
+        result_parts.append(text[last_end:start])
+        result_parts.append(mask)
         last_end = end
-    result.append(text[last_end:])
-    return "".join(result)
+    
+    result_parts.append(text[last_end:])
+    return "".join(result_parts)
 
 
-class Deidentifier:
-    def __init__(self, maskers, default_mask='[REDACTED]'):
+class OptimizedDeidentifier:
+    """
+    Highly optimized deidentifier with parallel processing, caching, and vectorization.
+    """
+    
+    def __init__(self, maskers: List, default_mask: str = '[REDACTED]', n_jobs: int = None):
         self.maskers = maskers
         self.default_mask = default_mask
+        self.n_jobs = n_jobs or min(mp.cpu_count(), 4)  # Limit to 4 to avoid overwhelming system
+        
+        # Pre-compile mask replacement pattern
+        self._mask_pattern = re.compile(r'(' + re.escape(default_mask) + r')(?:\s*\1)+')
+        
+        # Set up tqdm for pandas
         tqdm.pandas(desc="De-identifying")
 
-    def deidentify(self, text, entity_types=None):
+    def _process_single_text(self, text: str, entity_types: Optional[List[str]] = None) -> str:
+        """
+        Optimized single text processing with early returns and minimal allocations.
+        """
         if pd.isna(text) or not isinstance(text, str) or not text.strip():
             return text
 
         all_spans = []
+        
+        # Process maskers sequentially to avoid memory overhead
         for masker_instance in self.maskers:
             try:
                 spans = masker_instance.get_entity_spans(text, entity_types=entity_types)
                 all_spans.extend(spans)
             except Exception as e:
-                print(f"Error during get_entity_spans for {type(masker_instance).__name__}: {e}")
-
-
-        filtered_spans = []
-        for start, end, label in all_spans:
-            token_text = text[start:end]
-            if token_text.isupper() and ('person' not in label.lower()):
+                print(f"Error in {type(masker_instance).__name__}: {e}")
                 continue
-            filtered_spans.append((start, end, label))
 
-        merged_spans = merge_spans(filtered_spans)
-        masked_text = mask_text(text, merged_spans, mask=self.default_mask)
-        masked_text = replace_consecutive_NER_tags(masked_text, self.default_mask)
+        if not all_spans:
+            return text
+
+        # Filter spans efficiently
+        filtered_spans = [
+            (start, end, label) for start, end, label in all_spans
+            if not (text[start:end].isupper() and 'person' not in label.lower())
+        ]
+
+        if not filtered_spans:
+            return text
+
+        merged_spans = optimized_merge_spans(filtered_spans)
+        masked_text = optimized_mask_text(text, merged_spans, mask=self.default_mask)
+        
+        # Apply consecutive tag replacement
+        masked_text = self._mask_pattern.sub(r'\1', masked_text)
+        
         return masked_text
 
-    def deidentify_csv(self, input_csv_path, output_csv_path, column_name, entity_types=None):
+    def deidentify(self, text: str, entity_types: Optional[List[str]] = None) -> str:
+        """
+        Single text deidentification.
+        """
+        return self._process_single_text(text, entity_types)
+
+    def deidentify_batch(self, texts: List[str], entity_types: Optional[List[str]] = None) -> List[str]:
+        """
+        Batch processing with parallel execution for multiple texts.
+        """
+        if len(texts) == 1:
+            return [self._process_single_text(texts[0], entity_types)]
+        
+        # Use parallel processing for batch operations
+        process_func = partial(self._process_single_text, entity_types=entity_types)
+        
+        # Choose between threading and multiprocessing based on workload
+        if len(texts) < 10:  # Small batch - use threading
+            with ThreadPoolExecutor(max_workers=min(self.n_jobs, len(texts))) as executor:
+                return list(executor.map(process_func, texts))
+        else:  # Large batch - use multiprocessing
+            with ProcessPoolExecutor(max_workers=min(self.n_jobs, len(texts))) as executor:
+                return list(executor.map(process_func, texts))
+
+    def deidentify_csv(self, input_csv_path: str, output_csv_path: str, column_name: str, 
+                      entity_types: Optional[List[str]] = None, chunk_size: int = 1000):
+        """
+        Optimized CSV processing with chunking and vectorized operations.
+        """
         try:
-            df = pd.read_csv(input_csv_path)
+            # Process CSV in chunks for memory efficiency
+            chunk_iter = pd.read_csv(input_csv_path, chunksize=chunk_size)
+            first_chunk = True
+            
+            for chunk_df in tqdm(chunk_iter, desc="Processing CSV chunks"):
+                if column_name not in chunk_df.columns:
+                    print(f"Error: Column '{column_name}' not found. Available: {chunk_df.columns.tolist()}")
+                    return
+
+                # Prepare text data
+                text_series = chunk_df[column_name].astype(str).fillna('')
+                text_list = text_series.tolist()
+                
+                # Process in batch
+                processed_texts = self.deidentify_batch(text_list, entity_types)
+                chunk_df[column_name] = processed_texts
+                
+                # Write chunk to output
+                mode = 'w' if first_chunk else 'a'
+                header = first_chunk
+                chunk_df.to_csv(output_csv_path, mode=mode, header=header, index=False)
+                first_chunk = False
+                
+            print(f"De-identified data successfully saved to {output_csv_path}")
+            
         except FileNotFoundError:
             print(f"Error: Input CSV file not found at {input_csv_path}")
-            return
         except Exception as e:
-            print(f"Error reading CSV file {input_csv_path}: {e}")
-            return
-
-        if column_name not in df.columns:
-            print(f"Error: Column '{column_name}' not found in CSV. Available columns: {df.columns.tolist()}")
-            return
-
-        df[column_name] = df[column_name].astype(str).fillna('')
-
-        df[column_name] = df[column_name].progress_apply(
-            lambda x: self.deidentify(x, entity_types=entity_types)
-        )
-
-        try:
-            df.to_csv(output_csv_path, index=False)
-            print(f"De-identified data successfully saved to {output_csv_path}")
-        except Exception as e:
-            print(f"Error writing de-identified CSV to {output_csv_path}: {e}")
+            print(f"Error processing CSV: {e}")
 
 #######################################################################
 # Main Entry Point
 #######################################################################
 
 def main():
-    parser = argparse.ArgumentParser(description="De-identify text in strings or CSV files using various masking techniques.")
+    parser = argparse.ArgumentParser(description="Optimized de-identification tool for maximum performance.")
 
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--text", type=str, help="A single text string to de-identify.")
     group.add_argument("--input_csv", type=str, help="Path to the input CSV file for de-identification.")
 
-    parser.add_argument("--column_name", type=str, help="Name of the column to de-identify in the CSV. Required if --input_csv is used.")
-    parser.add_argument("--output_csv", type=str, help="Path to save the de-identified CSV file. Required if --input_csv is used.")
-    parser.add_argument("--output_text_file", type=str, help="Path to save the de-identified single text output. If not provided and --text is used, prints to console.")
+    parser.add_argument("--column_name", type=str, help="Name of the column to de-identify in the CSV.")
+    parser.add_argument("--output_csv", type=str, help="Path to save the de-identified CSV file.")
+    parser.add_argument("--output_text_file", type=str, help="Path to save the de-identified text output.")
+    parser.add_argument("--chunk_size", type=int, default=1000, help="Chunk size for CSV processing (default: 1000)")
 
     parser.add_argument("--maskers", nargs='+', choices=['regex', 'spacy', 'huggingface'],
-                        default=['regex', 'spacy', 'huggingface'], help="List of maskers to use (e.g., regex spacy huggingface). Default: ['regex']")
+                        default=['regex'], help="List of maskers to use. Default: ['regex']")
     parser.add_argument("--spacy_model", type=str, default="en_core_web_trf",
-                        help="Name of the SpaCy model to use (e.g., en_core_web_sm, en_core_web_trf). Default: en_core_web_trf")
+                        help="SpaCy model name. Default: en_core_web_trf")
     parser.add_argument("--hf_models", nargs='+', default=["StanfordAIMI/stanford-deidentifier-only-i2b2"],
-                        help="Name(s) or path(s) of Hugging Face NER model(s). Default: ['StanfordAIMI/stanford-deidentifier-only-i2b2']")
-    parser.add_argument("--hf_cache_dir", type=str, default=None,
-                        help="Directory to cache Hugging Face models. Defaults to Transformers library default cache.")
-    parser.add_argument("--hf_device", type=int, default=0,
-                        help="Device for Hugging Face pipeline (e.g., 0 for GPU 'cuda:0', -1 for CPU). Default: 0 (attempts GPU)")
-    parser.add_argument("--names_file", type=str, default="./data/names.json", # Default path
-                        help="Path to the JSON file containing known names for the RegexMasker. Default: ./data/names.json")
-    parser.add_argument("--regex_debug", action='store_true', help="Enable debug printing for RegexMasker.")
+                        help="Hugging Face model name(s).")
+    parser.add_argument("--hf_cache_dir", type=str, default=None, help="HF models cache directory.")
+    parser.add_argument("--hf_device", type=int, default=0, help="HF device (0 for GPU, -1 for CPU).")
+    parser.add_argument("--hf_batch_size", type=int, default=32, help="HF batch size for processing.")
+    parser.add_argument("--names_file", type=str, default="./data/names.json", help="Path to names JSON file.")
+    parser.add_argument("--regex_debug", action='store_true', help="Enable regex debug mode.")
+    parser.add_argument("--n_jobs", type=int, default=None, help="Number of parallel jobs (default: auto).")
 
     parser.add_argument("--entity_types", nargs='*', default=None,
-                        help="List of specific entity types to mask (e.g., PERSON ORG DATE). If not provided, maskers will target all entities they are configured for or find.")
+                        help="Specific entity types to mask (e.g., PERSON ORG DATE).")
     parser.add_argument("--default_mask", type=str, default="[REDACTED]",
-                        help="The string to use for replacing identified PHI. Default: '[REDACTED]'")
+                        help="Replacement string for identified PHI. Default: '[REDACTED]'")
 
     args = parser.parse_args()
 
     if args.input_csv and not (args.output_csv and args.column_name):
-        parser.error("--input_csv requires --output_csv and --column_name to be specified.")
+        parser.error("--input_csv requires --output_csv and --column_name.")
 
+    # Initialize optimized maskers
     active_maskers = []
-    print("Initializing maskers...")
+    print("Initializing optimized maskers...")
+    
     if "regex" in args.maskers:
-        # The load_names function is called here with the path from args
-        known_names_list = load_names(args.names_file)
-        active_maskers.append(RegexMasker(known_names=known_names_list, debug=args.regex_debug))
-        print(f"RegexMasker initialized {'with debug.' if args.regex_debug else '.'} Using names file: {args.names_file}")
+        known_names = load_names_cached(args.names_file)
+        active_maskers.append(OptimizedRegexMasker(known_names=known_names, debug=args.regex_debug))
+        print(f"OptimizedRegexMasker initialized with {len(known_names)} known names.")
+        
     if "spacy" in args.maskers:
         try:
-            active_maskers.append(SpaCyNERMasker(model_name=args.spacy_model))
-            print(f"SpaCyNERMasker initialized with model: {args.spacy_model}.")
-        except OSError as e:
-            print(f"Critical Error: Failed to initialize SpaCy model '{args.spacy_model}': {e}")
-            print("Please ensure the SpaCy model is downloaded (e.g., 'python -m spacy download en_core_web_trf'). Exiting.")
-            return
+            active_maskers.append(OptimizedSpaCyNERMasker(model_name=args.spacy_model))
+            print(f"OptimizedSpaCyNERMasker initialized with model: {args.spacy_model}")
         except Exception as e:
-            print(f"Critical Error: An unexpected error occurred while initializing SpaCy model '{args.spacy_model}': {e}. Exiting.")
+            print(f"Error initializing SpaCy model '{args.spacy_model}': {e}")
+            print("Ensure model is downloaded: python -m spacy download en_core_web_trf")
             return
+            
     if "huggingface" in args.maskers:
         for model_name in args.hf_models:
             try:
-                active_maskers.append(HuggingfaceMasker(model_name=model_name, cache_dir=args.hf_cache_dir, device=args.hf_device))
-                print(f"HuggingfaceMasker initialized with model: {model_name} (cache: {args.hf_cache_dir}, device: {args.hf_device}).")
+                active_maskers.append(OptimizedHuggingfaceMasker(
+                    model_name=model_name,
+                    cache_dir=args.hf_cache_dir,
+                    device=args.hf_device,
+                    batch_size=args.hf_batch_size
+                ))
+                print(f"OptimizedHuggingfaceMasker initialized: {model_name}")
             except Exception as e:
-                print(f"Critical Error: Failed to initialize Hugging Face model '{model_name}': {e}. Exiting.")
+                print(f"Error initializing HF model '{model_name}': {e}")
                 return
 
     if not active_maskers:
-        print("No maskers were specified or successfully initialized. Nothing to do. Exiting.")
+        print("No maskers initialized successfully. Exiting.")
         return
 
-    deidentifier = Deidentifier(active_maskers, default_mask=args.default_mask)
-    print(f"Deidentifier initialized with {len(active_maskers)} masker(s) and mask string '{args.default_mask}'.")
+    # Initialize optimized deidentifier
+    deidentifier = OptimizedDeidentifier(
+        active_maskers, 
+        default_mask=args.default_mask,
+        n_jobs=args.n_jobs
+    )
+    print(f"OptimizedDeidentifier initialized with {len(active_maskers)} masker(s), using {deidentifier.n_jobs} parallel jobs.")
     
-    entity_types_to_process = args.entity_types
-    if entity_types_to_process:
-        print(f"Targeting specific entity types: {', '.join(entity_types_to_process)}")
+    entity_types = args.entity_types
+    if entity_types:
+        print(f"Targeting entity types: {', '.join(entity_types)}")
     else:
-        print("No specific entity types provided; maskers will use their default detection scope.")
+        print("Using default entity detection scope.")
 
-
+    # Process input
     if args.input_csv:
-        print(f"\nProcessing CSV file: {args.input_csv}")
-        print(f"De-identifying column: '{args.column_name}'")
-        print(f"Output will be saved to: {args.output_csv}")
+        print(f"\nProcessing CSV: {args.input_csv}")
+        print(f"Column: '{args.column_name}', Chunk size: {args.chunk_size}")
+        print(f"Output: {args.output_csv}")
+        
         deidentifier.deidentify_csv(
             input_csv_path=args.input_csv,
             output_csv_path=args.output_csv,
             column_name=args.column_name,
-            entity_types=entity_types_to_process
+            entity_types=entity_types,
+            chunk_size=args.chunk_size
         )
     elif args.text:
-        print(f"\nOriginal text: \"{args.text}\"")
-        masked_text = deidentifier.deidentify(args.text, entity_types=entity_types_to_process)
-        print(f"Masked text:   \"{masked_text}\"")
+        print(f"\nOriginal: \"{args.text}\"")
+        masked_text = deidentifier.deidentify(args.text, entity_types=entity_types)
+        print(f"Masked:   \"{masked_text}\"")
+        
         if args.output_text_file:
             try:
                 with open(args.output_text_file, 'w', encoding='utf-8') as f:
                     f.write(masked_text)
-                print(f"Masked text saved to {args.output_text_file}")
+                print(f"Output saved to: {args.output_text_file}")
             except IOError as e:
-                print(f"Error: Could not write masked text to file {args.output_text_file}: {e}")
+                print(f"Error writing to {args.output_text_file}: {e}")
 
-    print("\nDe-identification process complete.")
+    print("\nOptimized de-identification complete.")
+
 
 if __name__ == "__main__":
-    # Example Usages:
-    # 1. De-identify a single string and print to console (using default regex masker):
-    #    python deid.py --text "Patient Johnathan Doe can be reached at john.doe@email.com or 123-456-7890. DOB is 01/02/1970."
-    #
-    # 2. De-identify a string using SpaCy and save to file:
-    #    python deid.py --text "Call Dr. Smith at Mass General." --maskers spacy --spacy_model en_core_web_sm --output_text_file masked_output.txt --entity_types PERSON ORG
-    #
-    # 3. De-identify a CSV column using regex and a Hugging Face model:
-    #    python deid.py --input_csv notes.csv --column_name clinical_note --output_csv notes_deid.csv --maskers regex huggingface --hf_models "Jean-Baptiste/roberta-large-ner-english" --names_file custom_names.json
-    #
-    # 4. De-identify a CSV using all maskers and specific entity types:
-    #    python deid.py --input_csv patient_records.csv --column_name summary --output_csv patient_records_deid.csv --maskers regex spacy huggingface --entity_types PERSON DATE PHONE EMAIL ADDRESS ID MRN --default_mask "[PHI]"
-    
     main()

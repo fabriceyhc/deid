@@ -1,0 +1,6 @@
+id,text
+1,"Patient [REDACTED] (DOB: [REDACTED], MRN: [REDACTED]) was seen on [REDACTED] by Dr. [REDACTED]. He lives at 123 Main St, [REDACTED], CA [REDACTED]. Contact: [REDACTED] or john.smith@example.com. His SSN is [REDACTED]. He mentioned his previous physician was Dr. [REDACTED] at [REDACTED]."
+2,"Ms. [REDACTED] visited on [REDACTED]. Her date of birth is [REDACTED] MRN is [REDACTED]. Address: [REDACTED] Oak Avenue, [REDACTED], IL [REDACTED]. Email: jane.doe@email.net, Phone: [REDACTED]. Referred by Dr. [REDACTED].."
+3,"Record for Mr. [REDACTED], born [REDACTED]. Medical Record Number: [REDACTED]. Seen on [REDACTED]. Resides at 789 Pine Ln, [REDACTED], NY [REDACTED]. Phone: [REDACTED]-0101. Email: david.clark@web.com. Employee ID: [REDACTED]. Notes state he works at [REDACTED]"
+4,"Patient [REDACTED] (MRN: 000-11-2222) appointment on [REDACTED]. DOB: [REDACTED]. Lives at 321 Cedar Dr, [REDACTED], TX [REDACTED]. No phone on record, email is alice.w@fakemail.org. Attending: Dr. [REDACTED]."
+5,"Emergency visit for [REDACTED] on [REDACTED]. DOB: [REDACTED]. MRN: [REDACTED]. Last known address: 654 Elm Street, [REDACTED], NJ [REDACTED]. Contact Dr. [REDACTED] at (555) [REDACTED] or r.miller@hospital.org"
