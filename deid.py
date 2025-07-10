@@ -14,14 +14,107 @@ import multiprocessing as mp
 from typing import List, Tuple, Set, Optional, Union
 import warnings
 
+# Set environment variables for iOS/MPS compatibility BEFORE importing torch
+os.environ['PYTORCH_ENABLE_MPS_FALLBACK'] = '1'
+# Additional MPS compatibility settings for memory management and stability
+os.environ['PYTORCH_MPS_HIGH_WATERMARK_RATIO'] = '0.0'
+
 # Suppress warnings for cleaner output
 warnings.filterwarnings("ignore", category=FutureWarning)
 
+# iOS/MPS compatibility imports and setup
+try:
+    import torch
+    TORCH_AVAILABLE = True
+except ImportError:
+    TORCH_AVAILABLE = False
+    print("Warning: PyTorch not available, falling back to CPU-only processing")
+
 #######################################################################
-#  Optimized Maskers
+#  iOS/Apple Silicon Compatibility Notes
+#######################################################################
+# This de-identification tool has been optimized for iOS devices and Apple Silicon:
+#
+# ✓ Automatic MPS (Metal Performance Shaders) detection and usage
+# ✓ PYTORCH_ENABLE_MPS_FALLBACK=1 for automatic CPU fallback
+# ✓ Graceful fallback to CPU if MPS fails
+# ✓ Conservative model loading for iOS compatibility  
+# ✓ Improved error handling for iOS-specific issues
+# ✓ Memory optimization for MPS devices
+#
+# For iOS devices, recommended usage:
+#   --maskers regex huggingface    (skip SpaCy for better compatibility)
+#   --hf_device mps               (force MPS) or --hf_device cpu (force CPU)
+#   --spacy_model en_core_web_sm  (use smaller model if using SpaCy)
+#
+# The tool will automatically detect and use the best available device.
+# Environment variables are set automatically for optimal MPS compatibility.
 #######################################################################
 
-class OptimizedRegexMasker:
+#######################################################################
+#  Device Detection and MPS Support
+#######################################################################
+
+def detect_optimal_device():
+    """
+    Detect the optimal device for processing with iOS/MPS support.
+    Returns device string and whether it's available.
+    """
+    if not TORCH_AVAILABLE:
+        return "cpu", True
+    
+    try:
+        # Check for MPS (Apple Silicon) first for iOS/macOS compatibility
+        if hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
+            try:
+                # Test MPS availability with a simple operation
+                test_tensor = torch.tensor([1.0], device='mps')
+                del test_tensor
+                print("MPS (Metal Performance Shaders) detected and working")
+                print("✓ PYTORCH_ENABLE_MPS_FALLBACK=1 enabled for automatic CPU fallback")
+                return "mps", True
+            except Exception as e:
+                print(f"MPS available but failed test: {e}, falling back to CPU")
+                return "cpu", True
+        
+        # Check for CUDA if MPS not available
+        elif torch.cuda.is_available():
+            try:
+                # Test CUDA availability
+                test_tensor = torch.tensor([1.0], device='cuda:0')
+                del test_tensor
+                print("CUDA GPU detected and working")
+                return "cuda:0", True
+            except Exception as e:
+                print(f"CUDA available but failed test: {e}, falling back to CPU")
+                return "cpu", True
+        
+        else:
+            print("No GPU acceleration available, using CPU")
+            return "cpu", True
+            
+    except Exception as e:
+        print(f"Error during device detection: {e}, falling back to CPU")
+        return "cpu", True
+
+def get_pipeline_device(device_str):
+    """
+    Convert device string to format expected by transformers pipeline.
+    """
+    if device_str == "cpu":
+        return -1
+    elif device_str == "mps":
+        return "mps" if TORCH_AVAILABLE else -1
+    elif device_str.startswith("cuda"):
+        return int(device_str.split(":")[1]) if ":" in device_str else 0
+    else:
+        return -1
+
+#######################################################################
+#  Optimized Maskers with iOS/MPS Support
+#######################################################################
+
+class RegexMasker:
     """
     Heavily optimized RegEx-based masker with pre-compiled patterns,
     vectorized operations, and intelligent caching.
@@ -97,39 +190,97 @@ class OptimizedRegexMasker:
         return found_spans
 
 
-class OptimizedHuggingfaceMasker:
+class HuggingfaceMasker:
     """
-    Optimized Hugging Face masker with batch processing and model caching.
+    Optimized Hugging Face masker with batch processing, model caching, and iOS/MPS support.
     """
     
-    def __init__(self, model_name="StanfordAIMI/stanford-deidentifier-only-i2b2", cache_dir=None, device=0, batch_size=32):
+    def __init__(self, model_name="StanfordAIMI/stanford-deidentifier-only-i2b2", cache_dir=None, device=None, batch_size=32):
         self.model_name = model_name
         self.batch_size = batch_size
         
-        # Use faster tokenizer settings
-        self.tokenizer = AutoTokenizer.from_pretrained(
-            model_name, 
-            cache_dir=cache_dir,
-            use_fast=True,  # Use fast tokenizer
-            model_max_length=512  # Limit token length for faster processing
-        )
+        # Detect optimal device if not specified
+        if device is None:
+            device_str, device_available = detect_optimal_device()
+            if not device_available:
+                device_str = "cpu"
+        else:
+            # Handle legacy device parameter (integer)
+            if isinstance(device, int):
+                if device >= 0:
+                    device_str = f"cuda:{device}" if TORCH_AVAILABLE and torch.cuda.is_available() else "cpu"
+                else:
+                    device_str = "cpu"
+            else:
+                device_str = device
         
-        self.model = AutoModelForTokenClassification.from_pretrained(
-            model_name, 
-            cache_dir=cache_dir,
-            torch_dtype='auto'  # Use automatic mixed precision when available
-        )
+        self.device_str = device_str
+        print(f"HuggingFace masker using device: {device_str}")
         
-        effective_device = device if device >= 0 else -1
-        # Create pipeline without return_all_scores (not supported in some versions)
-        self.nlp = pipeline(
-            "ner", 
-            model=self.model, 
-            tokenizer=self.tokenizer, 
-            device=effective_device, 
-            aggregation_strategy="simple",
-            batch_size=self.batch_size  # Enable batching
-        )
+        try:
+            # Use faster tokenizer settings
+            self.tokenizer = AutoTokenizer.from_pretrained(
+                model_name, 
+                cache_dir=cache_dir,
+                use_fast=True,  # Use fast tokenizer
+                model_max_length=512  # Limit token length for faster processing
+            )
+            
+            # Configure model loading based on device and iOS compatibility
+            model_kwargs = {
+                'cache_dir': cache_dir,
+            }
+            
+            # For iOS/MPS, be more conservative with torch_dtype
+            if device_str == "mps":
+                # MPS works best with float32 on iOS
+                model_kwargs['torch_dtype'] = torch.float32 if TORCH_AVAILABLE else None
+            elif device_str == "cpu":
+                # CPU can use auto dtype
+                model_kwargs['torch_dtype'] = 'auto'
+            else:
+                # CUDA can use auto dtype
+                model_kwargs['torch_dtype'] = 'auto'
+            
+            self.model = AutoModelForTokenClassification.from_pretrained(model_name, **model_kwargs)
+            
+            # Move model to device if needed
+            if TORCH_AVAILABLE and device_str != "cpu":
+                try:
+                    self.model = self.model.to(device_str)
+                except Exception as e:
+                    print(f"Failed to move model to {device_str}: {e}, using CPU")
+                    device_str = "cpu"
+                    self.device_str = "cpu"
+            
+            # Convert device for pipeline
+            pipeline_device = get_pipeline_device(device_str)
+            
+            # Create pipeline with error handling for iOS
+            try:
+                self.nlp = pipeline(
+                    "ner", 
+                    model=self.model, 
+                    tokenizer=self.tokenizer, 
+                    device=pipeline_device, 
+                    aggregation_strategy="simple",
+                    batch_size=self.batch_size  # Enable batching
+                )
+            except Exception as e:
+                print(f"Failed to create pipeline with device {pipeline_device}: {e}")
+                print("Falling back to CPU pipeline")
+                self.nlp = pipeline(
+                    "ner", 
+                    model=self.model, 
+                    tokenizer=self.tokenizer, 
+                    device=-1,  # Force CPU
+                    aggregation_strategy="simple",
+                    batch_size=self.batch_size
+                )
+                
+        except Exception as e:
+            print(f"Error initializing HuggingFace masker: {e}")
+            raise
 
     def get_entity_spans(self, text: str, entity_types: Optional[Union[str, List[str]]] = None) -> List[Tuple[int, int, str]]:
         if not text.strip():
@@ -152,6 +303,8 @@ class OptimizedHuggingfaceMasker:
             ner_results = self.nlp(text)
         except Exception as e:
             print(f"Warning: HuggingFace NER failed: {e}")
+            if "mps" in str(e).lower() or "metal" in str(e).lower():
+                print("This might be an MPS-specific issue. Consider using --hf_device cpu")
             return []
 
         spans = []
@@ -168,29 +321,96 @@ class OptimizedHuggingfaceMasker:
         return spans
 
 
-class OptimizedSpaCyNERMasker:
+class SpaCyNERMasker:
     """
-    Optimized SpaCy masker with disabled unnecessary pipeline components.
+    Optimized SpaCy masker with disabled unnecessary pipeline components and iOS/MPS compatibility.
     """
     
     def __init__(self, model_name="en_core_web_trf"):
+        self.model_name = model_name
+        self.gpu_enabled = False
+        
+        # Handle GPU preferences with iOS/MPS compatibility
+        # For MPS devices, we need to be very careful with SpaCy GPU usage
         try:
-            if spacy.prefer_gpu():
-                print(f"SpaCy attempting GPU for '{model_name}'.")
+            if TORCH_AVAILABLE:
+                device_str, device_available = detect_optimal_device()
+                
+                # MPS and SpaCy often have compatibility issues
+                # It's safer to disable GPU for SpaCy on MPS devices
+                if device_str == "mps":
+                    print(f"SpaCy using CPU for '{model_name}' (MPS detected - avoiding SpaCy GPU issues)")
+                    # Explicitly disable GPU to avoid MPS storage allocation errors
+                    try:
+                        spacy.require_cpu()
+                    except:
+                        pass  # Method might not exist in all SpaCy versions
+                    
+                elif device_str.startswith("cuda") and device_available:
+                    try:
+                        # Only try GPU on CUDA devices
+                        gpu_available = spacy.prefer_gpu()
+                        if gpu_available:
+                            print(f"SpaCy attempting to use CUDA GPU acceleration for '{model_name}'.")
+                            self.gpu_enabled = True
+                        else:
+                            print(f"SpaCy CUDA GPU acceleration not available, using CPU for '{model_name}'.")
+                    except Exception as e:
+                        print(f"SpaCy CUDA GPU setup failed: {e}, using CPU for '{model_name}'.")
+                        
+                else:
+                    print(f"SpaCy using CPU for '{model_name}' (no compatible GPU detected).")
             else:
-                print(f"SpaCy using CPU for '{model_name}'.")
+                print(f"SpaCy using CPU for '{model_name}' (PyTorch not available).")
+                
         except Exception as e:
-            print(f"SpaCy GPU check failed: {e}")
+            print(f"SpaCy device detection failed: {e}, defaulting to CPU")
         
-        # Load model with only necessary components for maximum speed
-        self.nlp = spacy.load(
-            model_name,
-            disable=["parser", "tagger", "lemmatizer", "attribute_ruler", "tok2vec"]  # Disable unnecessary components
-        )
-        
-        # Enable only NER
-        if "ner" not in self.nlp.pipe_names:
-            print(f"Warning: NER component not found in {model_name}")
+        try:
+            # Load model with conservative settings for iOS/MPS compatibility
+            disable_components = ["parser", "tagger", "lemmatizer", "attribute_ruler"]
+            
+            # For MPS devices, disable more components to avoid memory issues
+            if TORCH_AVAILABLE:
+                device_str, _ = detect_optimal_device()
+                if device_str == "mps":
+                    # Disable additional components that might cause MPS issues
+                    disable_components.extend(["tok2vec", "transformer"])
+            
+            # Try loading with aggressive component disabling first
+            try:
+                self.nlp = spacy.load(
+                    model_name,
+                    disable=disable_components
+                )
+                print(f"SpaCy model '{model_name}' loaded with components disabled: {disable_components}")
+                
+            except Exception as e:
+                print(f"Failed to load with aggressive disabling: {e}")
+                print("Trying with minimal component disabling...")
+                
+                # Fallback: try with minimal disabling
+                minimal_disable = ["parser", "tagger", "lemmatizer"]
+                self.nlp = spacy.load(
+                    model_name,
+                    disable=minimal_disable
+                )
+                print(f"SpaCy model '{model_name}' loaded with minimal disabling: {minimal_disable}")
+            
+            # Verify NER component is available
+            if "ner" not in self.nlp.pipe_names:
+                print(f"Warning: NER component not found in {model_name}")
+                print(f"Available components: {self.nlp.pipe_names}")
+            else:
+                print(f"✓ SpaCy NER component ready for '{model_name}'")
+                
+        except Exception as e:
+            print(f"Error loading SpaCy model '{model_name}': {e}")
+            print("Troubleshooting suggestions:")
+            print("1. For iOS/MPS devices, try: --maskers regex huggingface (skip SpaCy)")
+            print("2. Try a smaller model: --spacy_model en_core_web_sm")
+            print(f"3. Download the model: python -m spacy download {model_name}")
+            raise
 
     def get_entity_spans(self, text: str, entity_types: Optional[Union[str, List[str]]] = None) -> List[Tuple[int, int, str]]:
         if not text.strip():
@@ -205,18 +425,30 @@ class OptimizedSpaCyNERMasker:
         elif not isinstance(text, str):
             text = str(text)
 
-        # Process with optimized pipeline
-        doc = self.nlp(text)
-        entities = [(ent.start_char, ent.end_char, ent.label_) for ent in doc.ents]
+        try:
+            # Process with optimized pipeline
+            doc = self.nlp(text)
+            entities = [(ent.start_char, ent.end_char, ent.label_) for ent in doc.ents]
 
-        if entity_types:
-            entity_types_lower = [et.lower() for et in entity_types]
-            entities = [
-                (start, end, label) for start, end, label in entities
-                if any(e_type in label.lower() for e_type in entity_types_lower)
-            ]
+            if entity_types:
+                entity_types_lower = [et.lower() for et in entity_types]
+                entities = [
+                    (start, end, label) for start, end, label in entities
+                    if any(e_type in label.lower() for e_type in entity_types_lower)
+                ]
+                
+            return entities
             
-        return entities
+        except Exception as e:
+            error_msg = str(e)
+            if "MPS" in error_msg or "Metal" in error_msg or "placeholder storage" in error_msg.lower():
+                print(f"SpaCy MPS error detected: {e}")
+                print("This is a known issue with SpaCy and MPS devices.")
+                print("Recommendation: Use --maskers regex huggingface to skip SpaCy")
+                return []
+            else:
+                print(f"SpaCy processing error: {e}")
+                return []
 
 #######################################################################
 # Optimized Analysis Functions
@@ -319,7 +551,7 @@ def optimized_mask_text(text: str, spans: List[Tuple[int, int, str]], mask: str 
     return "".join(result_parts)
 
 
-class OptimizedDeidentifier:
+class Deidentifier:
     """
     Highly optimized deidentifier with parallel processing, caching, and vectorization.
     """
@@ -350,8 +582,18 @@ class OptimizedDeidentifier:
                 spans = masker_instance.get_entity_spans(text, entity_types=entity_types)
                 all_spans.extend(spans)
             except Exception as e:
-                print(f"Error in {type(masker_instance).__name__}: {e}")
-                continue
+                error_msg = str(e)
+                masker_name = type(masker_instance).__name__
+                
+                # Special handling for MPS-related errors
+                if "MPS" in error_msg or "Metal" in error_msg or "placeholder storage" in error_msg.lower():
+                    print(f"MPS Error in {masker_name}: {e}")
+                    if "SpaCy" in masker_name:
+                        print("💡 To avoid this error, use: --maskers regex huggingface")
+                    continue
+                else:
+                    print(f"Error in {masker_name}: {e}")
+                    continue
 
         if not all_spans:
             return text
@@ -437,12 +679,68 @@ class OptimizedDeidentifier:
 # Main Entry Point
 #######################################################################
 
+def test_device_compatibility():
+    """
+    Test function to verify device compatibility for iOS/MPS support.
+    """
+    print("=== Device Compatibility Test ===")
+    
+    # Show environment variable status
+    mps_fallback = os.environ.get('PYTORCH_ENABLE_MPS_FALLBACK', '0')
+    mps_watermark = os.environ.get('PYTORCH_MPS_HIGH_WATERMARK_RATIO', 'not set')
+    print(f"PYTORCH_ENABLE_MPS_FALLBACK: {mps_fallback} {'✓' if mps_fallback == '1' else '✗'}")
+    print(f"PYTORCH_MPS_HIGH_WATERMARK_RATIO: {mps_watermark} {'✓' if mps_watermark == '0.0' else '✗'}")
+    print()
+    
+    # Test device detection
+    device_str, device_available = detect_optimal_device()
+    print(f"Detected device: {device_str}")
+    print(f"Device available: {device_available}")
+    
+    if TORCH_AVAILABLE:
+        print(f"PyTorch version: {torch.__version__}")
+        
+        # Test MPS specifically
+        if hasattr(torch.backends, 'mps'):
+            print(f"MPS available: {torch.backends.mps.is_available()}")
+            if torch.backends.mps.is_available():
+                try:
+                    test_tensor = torch.tensor([1.0, 2.0, 3.0], device='mps')
+                    result = test_tensor * 2
+                    print("✓ MPS test successful")
+                    del test_tensor, result
+                except Exception as e:
+                    print(f"✗ MPS test failed: {e}")
+        else:
+            print("MPS backend not available in this PyTorch version")
+            
+        # Test CUDA
+        if torch.cuda.is_available():
+            print(f"CUDA available: {torch.cuda.is_available()}")
+            print(f"CUDA device count: {torch.cuda.device_count()}")
+        else:
+            print("CUDA not available")
+    else:
+        print("PyTorch not available - CPU only")
+    
+    print("=== Test Complete ===\n")
+
 def main():
-    parser = argparse.ArgumentParser(description="Optimized de-identification tool for maximum performance.")
+    parser = argparse.ArgumentParser(
+        description="Optimized de-identification tool for maximum performance.",
+        epilog="""
+iOS/MPS Device Usage Examples:
+  %(prog)s --text "John Smith called" --maskers regex huggingface --hf_device mps
+  %(prog)s --text "Patient ID 123" --maskers regex huggingface --hf_device cpu
+  %(prog)s --test_device  # Test device compatibility
+        """,
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
 
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--text", type=str, help="A single text string to de-identify.")
     group.add_argument("--input_csv", type=str, help="Path to the input CSV file for de-identification.")
+    group.add_argument("--test_device", action='store_true', help="Test device compatibility for iOS/MPS support.")
 
     parser.add_argument("--column_name", type=str, help="Name of the column to de-identify in the CSV.")
     parser.add_argument("--output_csv", type=str, help="Path to save the de-identified CSV file.")
@@ -456,7 +754,7 @@ def main():
     parser.add_argument("--hf_models", nargs='+', default=["StanfordAIMI/stanford-deidentifier-only-i2b2"],
                         help="Hugging Face model name(s).")
     parser.add_argument("--hf_cache_dir", type=str, default=None, help="HF models cache directory.")
-    parser.add_argument("--hf_device", type=int, default=0, help="HF device (0 for GPU, -1 for CPU).")
+    parser.add_argument("--hf_device", type=str, default=None, help="HF device ('mps' for Apple Silicon, 'cuda:0' for NVIDIA GPU, 'cpu' for CPU, or auto-detect if not specified).")
     parser.add_argument("--hf_batch_size", type=int, default=32, help="HF batch size for processing.")
     parser.add_argument("--names_file", type=str, default="./data/names.json", help="Path to names JSON file.")
     parser.add_argument("--regex_debug", action='store_true', help="Enable regex debug mode.")
@@ -472,36 +770,82 @@ def main():
     if args.input_csv and not (args.output_csv and args.column_name):
         parser.error("--input_csv requires --output_csv and --column_name.")
 
+    # Handle device compatibility test
+    if args.test_device:
+        test_device_compatibility()
+        return
+
+    # Check device availability and compatibility
+    print("Checking device availability...")
+    optimal_device, device_available = detect_optimal_device()
+    if optimal_device == "mps":
+        print("✓ iOS/MPS acceleration available and working")
+        # Special warning for iOS users about SpaCy compatibility
+        if "spacy" in args.maskers:
+            print("\n⚠️  iOS/MPS COMPATIBILITY NOTICE:")
+            print("SpaCy has known issues with MPS devices that may cause 'placeholder storage' errors.")
+            print("If you encounter errors, try: --maskers regex huggingface")
+            print()
+    elif optimal_device.startswith("cuda"):
+        print(f"✓ CUDA GPU acceleration available: {optimal_device}")
+    else:
+        print("ℹ Using CPU processing (no GPU acceleration available)")
+    
     # Initialize optimized maskers
     active_maskers = []
     print("Initializing optimized maskers...")
     
     if "regex" in args.maskers:
         known_names = load_names_cached(args.names_file)
-        active_maskers.append(OptimizedRegexMasker(known_names=known_names, debug=args.regex_debug))
-        print(f"OptimizedRegexMasker initialized with {len(known_names)} known names.")
+        active_maskers.append(RegexMasker(known_names=known_names, debug=args.regex_debug))
+        print(f"RegexMasker initialized with {len(known_names)} known names.")
         
     if "spacy" in args.maskers:
         try:
-            active_maskers.append(OptimizedSpaCyNERMasker(model_name=args.spacy_model))
-            print(f"OptimizedSpaCyNERMasker initialized with model: {args.spacy_model}")
+            active_maskers.append(SpaCyNERMasker(model_name=args.spacy_model))
+            print(f"SpaCyNERMasker initialized with model: {args.spacy_model}")
         except Exception as e:
+            error_msg = str(e)
             print(f"Error initializing SpaCy model '{args.spacy_model}': {e}")
-            print("Ensure model is downloaded: python -m spacy download en_core_web_trf")
+            
+            if "MPS" in error_msg or "Metal" in error_msg or "placeholder storage" in error_msg.lower():
+                print("\n🚨 MPS Storage Allocation Error Detected!")
+                print("This is a known compatibility issue between SpaCy and Apple Silicon MPS.")
+                print("\n✅ RECOMMENDED SOLUTIONS:")
+                print("1. Skip SpaCy entirely: --maskers regex huggingface")
+                print("2. Force CPU for all processing: --hf_device cpu")
+                print("3. Use a different SpaCy model: --spacy_model en_core_web_sm")
+                print("\n💡 For iOS devices, option 1 is strongly recommended for best compatibility.")
+            else:
+                print("\nPossible solutions:")
+                print(f"1. Download the model: python -m spacy download {args.spacy_model}")
+                print("2. For iOS devices, try a smaller model like 'en_core_web_sm'")
+                print("3. Use --maskers regex huggingface to skip SpaCy")
             return
             
     if "huggingface" in args.maskers:
         for model_name in args.hf_models:
             try:
-                active_maskers.append(OptimizedHuggingfaceMasker(
+                # Handle device parameter - convert legacy integer format if needed
+                device = args.hf_device
+                if device is not None and device.isdigit():
+                    device_num = int(device)
+                    if device_num >= 0:
+                        device = f"cuda:{device_num}" if TORCH_AVAILABLE and torch.cuda.is_available() else "cpu"
+                    else:
+                        device = "cpu"
+                    
+                active_maskers.append(HuggingfaceMasker(
                     model_name=model_name,
                     cache_dir=args.hf_cache_dir,
-                    device=args.hf_device,
+                    device=device,
                     batch_size=args.hf_batch_size
                 ))
-                print(f"OptimizedHuggingfaceMasker initialized: {model_name}")
+                print(f"HuggingfaceMasker initialized: {model_name}")
             except Exception as e:
                 print(f"Error initializing HF model '{model_name}': {e}")
+                print("This might be due to iOS/MPS compatibility issues.")
+                print("Try using --hf_device cpu to force CPU-only processing.")
                 return
 
     if not active_maskers:
@@ -509,12 +853,12 @@ def main():
         return
 
     # Initialize optimized deidentifier
-    deidentifier = OptimizedDeidentifier(
+    deidentifier = Deidentifier(
         active_maskers, 
         default_mask=args.default_mask,
         n_jobs=args.n_jobs
     )
-    print(f"OptimizedDeidentifier initialized with {len(active_maskers)} masker(s), using {deidentifier.n_jobs} parallel jobs.")
+    print(f"Deidentifier initialized with {len(active_maskers)} masker(s), using {deidentifier.n_jobs} parallel jobs.")
     
     entity_types = args.entity_types
     if entity_types:
