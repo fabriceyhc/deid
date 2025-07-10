@@ -326,42 +326,65 @@ class SpaCyNERMasker:
     Optimized SpaCy masker with disabled unnecessary pipeline components and iOS/MPS compatibility.
     """
     
-    def __init__(self, model_name="en_core_web_trf"):
+    def __init__(self, model_name="en_core_web_trf", device="auto"):
         self.model_name = model_name
         self.gpu_enabled = False
+        self.device = device
         
-        # Handle GPU preferences with iOS/MPS compatibility
-        # For MPS devices, we need to be very careful with SpaCy GPU usage
+        # Handle device preferences with explicit user control
         try:
-            if TORCH_AVAILABLE:
-                device_str, device_available = detect_optimal_device()
-                
-                # MPS and SpaCy often have compatibility issues
-                # It's safer to disable GPU for SpaCy on MPS devices
-                if device_str == "mps":
-                    print(f"SpaCy using CPU for '{model_name}' (MPS detected - avoiding SpaCy GPU issues)")
-                    # Explicitly disable GPU to avoid MPS storage allocation errors
-                    try:
-                        spacy.require_cpu()
-                    except:
-                        pass  # Method might not exist in all SpaCy versions
+            if device == "cpu":
+                # User explicitly wants CPU only
+                print(f"SpaCy using CPU for '{model_name}' (explicitly requested)")
+                try:
+                    spacy.require_cpu()
+                except:
+                    pass  # Method might not exist in all SpaCy versions
                     
-                elif device_str.startswith("cuda") and device_available:
-                    try:
-                        # Only try GPU on CUDA devices
-                        gpu_available = spacy.prefer_gpu()
-                        if gpu_available:
-                            print(f"SpaCy attempting to use CUDA GPU acceleration for '{model_name}'.")
-                            self.gpu_enabled = True
-                        else:
-                            print(f"SpaCy CUDA GPU acceleration not available, using CPU for '{model_name}'.")
-                    except Exception as e:
-                        print(f"SpaCy CUDA GPU setup failed: {e}, using CPU for '{model_name}'.")
+            elif device == "gpu":
+                # User explicitly wants GPU
+                try:
+                    gpu_available = spacy.prefer_gpu()
+                    if gpu_available:
+                        print(f"SpaCy using GPU acceleration for '{model_name}' (explicitly requested)")
+                        self.gpu_enabled = True
+                    else:
+                        print(f"SpaCy GPU acceleration not available, falling back to CPU for '{model_name}'")
+                except Exception as e:
+                    print(f"SpaCy GPU setup failed: {e}, falling back to CPU for '{model_name}'")
+                    
+            else:  # device == "auto"
+                # Automatic device detection with iOS/MPS compatibility
+                if TORCH_AVAILABLE:
+                    device_str, device_available = detect_optimal_device()
+                    
+                    # MPS and SpaCy often have compatibility issues
+                    # It's safer to disable GPU for SpaCy on MPS devices
+                    if device_str == "mps":
+                        print(f"SpaCy using CPU for '{model_name}' (MPS detected - avoiding SpaCy GPU issues)")
+                        print("💡 Use --spacy_device cpu to suppress this auto-detection")
+                        # Explicitly disable GPU to avoid MPS storage allocation errors
+                        try:
+                            spacy.require_cpu()
+                        except:
+                            pass  # Method might not exist in all SpaCy versions
                         
+                    elif device_str.startswith("cuda") and device_available:
+                        try:
+                            # Only try GPU on CUDA devices
+                            gpu_available = spacy.prefer_gpu()
+                            if gpu_available:
+                                print(f"SpaCy attempting to use CUDA GPU acceleration for '{model_name}'.")
+                                self.gpu_enabled = True
+                            else:
+                                print(f"SpaCy CUDA GPU acceleration not available, using CPU for '{model_name}'.")
+                        except Exception as e:
+                            print(f"SpaCy CUDA GPU setup failed: {e}, using CPU for '{model_name}'.")
+                            
+                    else:
+                        print(f"SpaCy using CPU for '{model_name}' (no compatible GPU detected).")
                 else:
-                    print(f"SpaCy using CPU for '{model_name}' (no compatible GPU detected).")
-            else:
-                print(f"SpaCy using CPU for '{model_name}' (PyTorch not available).")
+                    print(f"SpaCy using CPU for '{model_name}' (PyTorch not available).")
                 
         except Exception as e:
             print(f"SpaCy device detection failed: {e}, defaulting to CPU")
@@ -444,7 +467,9 @@ class SpaCyNERMasker:
             if "MPS" in error_msg or "Metal" in error_msg or "placeholder storage" in error_msg.lower():
                 print(f"SpaCy MPS error detected: {e}")
                 print("This is a known issue with SpaCy and MPS devices.")
-                print("Recommendation: Use --maskers regex huggingface to skip SpaCy")
+                print("Recommendations:")
+                print("1. Use --maskers regex huggingface to skip SpaCy")
+                print("2. Use --spacy_device cpu to force SpaCy CPU usage")
                 return []
             else:
                 print(f"SpaCy processing error: {e}")
@@ -589,7 +614,9 @@ class Deidentifier:
                 if "MPS" in error_msg or "Metal" in error_msg or "placeholder storage" in error_msg.lower():
                     print(f"MPS Error in {masker_name}: {e}")
                     if "SpaCy" in masker_name:
-                        print("💡 To avoid this error, use: --maskers regex huggingface")
+                        print("💡 To avoid this error:")
+                        print("   - Use: --maskers regex huggingface (skip SpaCy)")
+                        print("   - Or: --spacy_device cpu (force SpaCy CPU)")
                     continue
                 else:
                     print(f"Error in {masker_name}: {e}")
@@ -732,6 +759,7 @@ def main():
 iOS/MPS Device Usage Examples:
   %(prog)s --text "John Smith called" --maskers regex huggingface --hf_device mps
   %(prog)s --text "Patient ID 123" --maskers regex huggingface --hf_device cpu
+  %(prog)s --text "John visited today" --maskers spacy --spacy_device cpu  # Force SpaCy CPU
   %(prog)s --test_device  # Test device compatibility
         """,
         formatter_class=argparse.RawDescriptionHelpFormatter
@@ -751,6 +779,9 @@ iOS/MPS Device Usage Examples:
                         default=['regex'], help="List of maskers to use. Default: ['regex']")
     parser.add_argument("--spacy_model", type=str, default="en_core_web_trf",
                         help="SpaCy model name. Default: en_core_web_trf")
+    parser.add_argument("--spacy_device", type=str, default="auto", 
+                        choices=["auto", "cpu", "gpu"], 
+                        help="SpaCy device ('auto' for automatic detection, 'cpu' to force CPU, 'gpu' to prefer GPU). Default: auto")
     parser.add_argument("--hf_models", nargs='+', default=["StanfordAIMI/stanford-deidentifier-only-i2b2"],
                         help="Hugging Face model name(s).")
     parser.add_argument("--hf_cache_dir", type=str, default=None, help="HF models cache directory.")
@@ -802,8 +833,8 @@ iOS/MPS Device Usage Examples:
         
     if "spacy" in args.maskers:
         try:
-            active_maskers.append(SpaCyNERMasker(model_name=args.spacy_model))
-            print(f"SpaCyNERMasker initialized with model: {args.spacy_model}")
+            active_maskers.append(SpaCyNERMasker(model_name=args.spacy_model, device=args.spacy_device))
+            print(f"SpaCyNERMasker initialized with model: {args.spacy_model}, device: {args.spacy_device}")
         except Exception as e:
             error_msg = str(e)
             print(f"Error initializing SpaCy model '{args.spacy_model}': {e}")
@@ -813,8 +844,9 @@ iOS/MPS Device Usage Examples:
                 print("This is a known compatibility issue between SpaCy and Apple Silicon MPS.")
                 print("\n✅ RECOMMENDED SOLUTIONS:")
                 print("1. Skip SpaCy entirely: --maskers regex huggingface")
-                print("2. Force CPU for all processing: --hf_device cpu")
-                print("3. Use a different SpaCy model: --spacy_model en_core_web_sm")
+                print("2. Force SpaCy to use CPU: --spacy_device cpu")
+                print("3. Force CPU for all processing: --hf_device cpu")
+                print("4. Use a different SpaCy model: --spacy_model en_core_web_sm")
                 print("\n💡 For iOS devices, option 1 is strongly recommended for best compatibility.")
             else:
                 print("\nPossible solutions:")
