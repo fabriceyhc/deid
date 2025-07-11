@@ -1,6 +1,1763 @@
-id,text
-1,"Patient [REDACTED] (DOB: [REDACTED], MRN: [REDACTED]) was seen on [REDACTED] by Dr. [REDACTED]. He lives at 123 Main St, [REDACTED], CA [REDACTED]. Contact: [REDACTED] or john.smith@example.com. His SSN is [REDACTED]. He mentioned his previous physician was Dr. [REDACTED] at [REDACTED]."
-2,"Ms. [REDACTED] visited on [REDACTED]. Her date of birth is [REDACTED] MRN is [REDACTED]. Address: [REDACTED] Oak Avenue, [REDACTED], IL [REDACTED]. Email: jane.doe@email.net, Phone: [REDACTED]. Referred by Dr. [REDACTED].."
-3,"Record for Mr. [REDACTED], born [REDACTED]. Medical Record Number: [REDACTED]. Seen on [REDACTED]. Resides at 789 Pine Ln, [REDACTED], NY [REDACTED]. Phone: [REDACTED]-0101. Email: david.clark@web.com. Employee ID: [REDACTED]. Notes state he works at [REDACTED]"
-4,"Patient [REDACTED] (MRN: 000-11-2222) appointment on [REDACTED]. DOB: [REDACTED]. Lives at 321 Cedar Dr, [REDACTED], TX [REDACTED]. No phone on record, email is alice.w@fakemail.org. Attending: Dr. [REDACTED]."
-5,"Emergency visit for [REDACTED] on [REDACTED]. DOB: [REDACTED]. MRN: [REDACTED]. Last known address: 654 Elm Street, [REDACTED], NJ [REDACTED]. Contact Dr. [REDACTED] at (555) [REDACTED] or r.miller@hospital.org"
+note_id,subject_id,hadm_id,note_type,note_seq,charttime,storetime,text
+10000032-DS-21,10000032,22595853,DS,21,2180-05-07 00:00:00,2180-05-09 15:26:00," 
+Name:  [REDACTED]                     Unit No:   MRN-8472951
+ 
+Admission Date:  [REDACTED]              Discharge Date:   [REDACTED]
+ 
+Date of Birth[REDACTED]Sex:   F
+ 
+Service: MEDICINE
+ 
+Allergies: 
+No Known Allergies / Adverse Drug Reactions
+ 
+Attending: Dr. [REDACTED], MD
+ 
+Chief Complaint:
+Worsening ABD distension and pain 
+ 
+Major Surgical or Invasive Procedure:
+Paracentesis
+
+ 
+History of Present Illness:
+[REDACTED] female with HCV cirrhosis c/b ascites, hiv on ART, h/o IVDU, COPD, 
+bioplar, PTSD, presented from OSH ED with worsening abd 
+distension over [REDACTED].  
+Pt reports self-discontinuing lasix and spirnolactone [REDACTED] 
+ago, because she feels like ""they don't do anything"" and that 
+she ""doesn't want to put more chemicals in her."" She does not 
+follow Na-restricted diets. In [REDACTED], she notes that she 
+has been having worsening abd distension and discomfort. She 
+denies lower extremity edema, or SOB, or orthopnea. She denies f/c/n/v, d/c, 
+dysuria. She had food poisoning [REDACTED] from eating stale 
+cake (n/v [REDACTED] after food ingestion), which resolved [REDACTED]. She denies other recent illness or sick contacts. She notes 
+that she has been noticing gum bleeding while brushing her teeth 
+in [REDACTED]. she denies easy bruising, melena, BRBPR, 
+hemetesis, hemoptysis, or hematuria.  
+Because of her abd pain, she went to OSH ED and was transferred 
+to [REDACTED] for further care. Per ED report, pt has brief period of 
+confusion - she did not recall the ultrasound or bloodwork at 
+osh. She denies recent drug use or alcohol use. She denies 
+feeling confused, but reports that she is forgetful at times.  
+In the ED, initial vitals were [REDACTED] 70 106/63 16 97%RA  
+Labs notable for ALT/AST/AP 89/124/156 with total bilirubin: [REDACTED], 
+Tbili1.6, WBC [REDACTED]K, platelet [REDACTED], INR [REDACTED]  
+
+ 
+Past Medical History:
+[REDACTED]. HCV Cirrhosis  
+[REDACTED]. No history of abnormal Pap smears.  
+[REDACTED]. She had calcification in her breast, which was removed  
+previously and per patient not, it was benign.  
+[REDACTED]. For HIV disease, she is being followed by Dr. [REDACTED] and Dr.  
+[REDACTED] at [REDACTED].  
+[REDACTED]. COPD  
+[REDACTED]. Past history of smoking.  
+[REDACTED]. She also had a skin lesion, which was biopsied and showed  
+skin cancer per patient report and is scheduled for a complete  
+removal of the skin lesion in [REDACTED].  
+[REDACTED]. She also had another lesion in her forehead with purple  
+discoloration. It was biopsied to exclude the possibility of  
+[REDACTED]'s sarcoma, the results is pending.  
+[REDACTED]. A 15 mm hypoechoic lesion on her ultrasound on [REDACTED]  
+and is being monitored by an MRI.  
+[REDACTED]. History of dysplasia of anus in [REDACTED]. Bipolar affective disorder, currently manic, mild, and PTSD. 
+ 
+[REDACTED]. History of cocaine and heroin use.  
+
+ 
+Social History:
+Patient lives alone in a studio apartment in [REDACTED]. She is currently unemployed and receives disability benefits. She has a high school education and previously worked as a home health aide before becoming disabled due to her medical conditions. She reports good adherence to her HIV medications but admits to being inconsistent with her hepatitis C treatment and diuretic medications.
+Family History:
+She a total of [REDACTED] siblings, but she is not  
+talking to most of them. She only has [REDACTED] brother that she is in 
+ 
+touch with and lives in [REDACTED], MA. She is not aware of any  
+known GI or liver disease in her family.  
+Her last alcohol consumption was [REDACTED] drink [REDACTED]. No  
+regular alcohol consumption. Last drug use [REDACTED]. She  
+quit smoking [REDACTED].  
+
+ 
+Physical Exam:
+VS: 98.1 107/61 78 18 97RA  
+General: in NAD  
+HEENT: CTAB, anicteric sclera, OP clear  
+Neck: supple, no LAD  
+CV: RRR,S1S2, no m/r/g  
+Lungs: CTAb, prolonged expiratory phase, no w/r/r  
+Abdomen: distended, mild diffuse tenderness, +flank dullness, 
+cannot percuss liver/spleen edge due to distension  
+GU: no foley  
+Ext: wwp, no c/e/e, + clubbing  
+Neuro: AAO3, converse normally, able to recall [REDACTED] times after [REDACTED], CN II-XII intact  
+
+Discharge:
+
+PHYSICAL EXAMINATION:  
+VS: 98 105/70 95
+General: in NAD  
+HEENT: anicteric sclera, OP clear  
+Neck: supple, no LAD  
+CV: RRR,S1S2, no m/r/g  
+Lungs: CTAb, prolonged expiratory phase, no w/r/r  
+Abdomen: distended but improved, TTP in RUQ, 
+GU: no foley  
+Ext: wwp, no c/e/e, + clubbing  
+Neuro: AAO3,  CN II-XII intact  
+
+ 
+Pertinent Results:
+05/05/2180 10:25PM   GLUCOSE-109* UREA N-25* CREAT-0.3* SODIUM-138 
+POTASSIUM-3.4 CHLORIDE-105 TOTAL CO2-27 ANION GAP-9
+05/05/2180 10:25PM   estGFR->60
+05/05/2180 10:25PM   ALT(SGPT)-100* AST(SGOT)-114* ALK PHOS-114* 
+TOT BILI-1.6*
+05/05/2180 10:25PM   LIPASE-77*
+05/05/2180 10:25PM   ALBUMIN-3.3*
+05/05/2180 10:25PM   WBC-5.0# RBC-4.29 HGB-14.3 HCT-42.6 MCV-99* 
+MCH-33.3* MCHC-33.5 RDW-15.7*
+05/05/2180 10:25PM   NEUTS-70.3* LYMPHS-16.5* MONOS-8.1 EOS-4.2* 
+BASOS-0.8
+05/05/2180 10:25PM   PLT COUNT-71*
+05/05/2180 10:25PM   PT-15.2 PTT-30.9 INR-1.6
+05/05/2180 10:25PM   HIV viral load [REDACTED]/mL, CD4 count [REDACTED]
+.
+
+CXR: No acute cardiopulmonary process.  
+U/S:  
+[REDACTED]. Nodular appearance of the liver compatible with cirrhosis. 
+Signs of portal  
+hypertension including small amount of ascites and splenomegaly. 
+ 
+[REDACTED]. Cholelithiasis.  
+3. Patent portal veins with normal hepatopetal flow.  
+Diagnostic para attempted in the ED, unsuccessful.  
+On the floor, pt c/o abd distension and discomfort.
+ 
+Brief Hospital Course:
+[REDACTED] female with HCV cirrhosis c/b ascites, hiv on ART, h/o IVDU, COPD, 
+bioplar, PTSD, presented from OSH ED with worsening abd 
+distension over [REDACTED] and confusion.  
+
+# Ascites - p/w worsening abd distension and discomfort for [REDACTED]. likely secondary to portal HTN given underlying liver disease, 
+though no ascitic fluid available on [REDACTED] of admission. No 
+signs of heart failure noted on exam. This was likely secondary to med 
+non-compliance and lack of diet restriction. SBP negative
+diuretics:  
+> Furosemide [REDACTED] DAILY  
+> Spironolactone [REDACTED] PO DAILY, chosen over the usual [REDACTED] 
+dose d/t K+ of [REDACTED].   
+ CXR was wnl, UA negative, Urine culture blood culture negative. 
+ 
+Pt was losing excess fluid appropriately with stable lytes on 
+the above regimen. Pt was scheduled with current PCP for 
+lab check upon discharge.   
+Pt was scheduled for new PCP with Dr. [REDACTED] at [REDACTED] and 
+follow up in Liver clinic to schedule outpatient screening EGD 
+and colonoscopy.   
+ 
+
+ 
+Medications on Admission:
+The Preadmission Medication list is accurate and complete.
+[REDACTED]. Furosemide [REDACTED] PO DAILY 
+2. Spironolactone [REDACTED] PO DAILY 
+[REDACTED]. [REDACTED] 2 PUFF IH Q4H:PRN wheezing, SOB 
+[REDACTED]. Raltegravir [REDACTED] PO BID 
+5. [REDACTED] ([REDACTED]) 1 TAB PO DAILY 
+6. Nicotine Patch [REDACTED] TD DAILY 
+7. [REDACTED] 1 NEB IH Q6H SOB 
+
+ 
+Discharge Medications:
+1. [REDACTED] 2 PUFF IH Q4H:PRN wheezing, SOB 
+2. [REDACTED] ([REDACTED]) 1 TAB PO DAILY 
+3. Furosemide [REDACTED] PO DAILY 
+RX *furosemide [REDACTED] tablet(s) by mouth Daily Disp #*[REDACTED] Tablet 
+Refills:*3
+4. Ipratropium Bromide Neb 1 NEB IH Q6H SOB 
+5. Nicotine Patch [REDACTED] TD DAILY 
+6. [REDACTED] PO BID 
+7. [REDACTED] PO DAILY 
+[REDACTED]. Acetaminophen [REDACTED] PO Q6H:PRN pain 
+
+ 
+Discharge Disposition:
+Home
+ 
+Discharge Diagnosis:
+Ascites from Portal HTN
+
+ 
+Discharge Condition:
+Mental Status: Clear and coherent.
+Level of Consciousness: Alert and interactive.
+Activity Status: Ambulatory - Independent.
+
+ 
+Discharge Instructions:
+Dear Ms. [REDACTED],
+It was a pleasure taking care of you! You came to us with 
+stomach pain and worsening distension. While you were here we 
+did a paracentesis to remove [REDACTED] from your belly. We 
+also placed you on you [REDACTED] of Lasix and [REDACTED] of Aldactone to 
+help you urinate the excess fluid still in your belly. As we 
+discussed, everyone has a different dose of lasix required to 
+make them urinate and it's likely that you weren't taking a high 
+enough dose. Please take these medications [REDACTED] to keep excess 
+fluid off and eat a low salt diet. You will follow up with Dr. 
+[REDACTED] in liver clinic and from there have your colonoscopy 
+and EGD scheduled. Of course, we are always here if you need us. 
+We wish you all the best!
+Your [REDACTED] Team.  
+ 
+Followup Instructions:
+[REDACTED]. Follow up with Dr. Maria Gonzalez ([REDACTED]) in [REDACTED] - call 617-555-0123
+2. Schedule EGD and colonoscopy at GI - call 617-555-0145
+3. Follow up with Dr. [REDACTED] (ID) in [REDACTED] - call 617-555-0167
+4. Get labs before next appointment
+"
+10000032-DS-22,10000032,22841357,DS,22,2180-06-27 00:00:00,2180-07-01 10:15:00," 
+Name:  [REDACTED]                     Unit No:   MRN-8472951
+ 
+Admission Date:  [REDACTED]              Discharge Date:   [REDACTED]
+ 
+Date of Birth[REDACTED]03/22/2134             Sex:   F
+ 
+Service: MEDICINE
+ 
+Allergies: 
+Percocet
+ 
+Attending: Dr. [REDACTED], MD.
+ 
+Chief Complaint:
+abdominal fullness and discomfort
+ 
+Major Surgical or Invasive Procedure:
+06/27/2180 diagnostic paracentesis
+06/28/2180 therapeutic paracentesis
+
+ 
+History of Present Illness:
+[REDACTED] female with HIV on HAART, COPD, HCV cirrhosis complicated by 
+ascites and HE admitted with abdominal distention and pain. She 
+was admitted to [REDACTED] for the same symptoms 
+recently and had 3L fluid removed (no SBP) [REDACTED] and 
+felt better. Since discharge, her abdomen has become 
+increasingly distended with pain. This feels similar to prior 
+episodes of ascites.  
+Her diuretics were recently decreased on [REDACTED] due to worsening 
+hyponatremia [REDACTED] and hyperkalemia [REDACTED]. Patient states she has 
+been compliant with her HIV and diuretic medications but never 
+filled out the lactulose prescription. She states she has had 
+[REDACTED] BMs [REDACTED] at home. She has had some visual hallucinations 
+and forgetfulness. Her appetite has been poor.  
+In the ED, initial vitals were [REDACTED] RA. CBC 
+near baseline, INR [REDACTED], Na [REDACTED], Cr [REDACTED]. AST and ALT mildly above 
+baseline [REDACTED] and [REDACTED] and albumin [REDACTED]. Diagnostic para with [REDACTED] 
+WBC, [REDACTED] PMN, total protein [REDACTED]. UA with few bact, [REDACTED] WBC, mod 
+leuk, neg nitr, but contaminated with [REDACTED] epi. CXR clear. RUQ US 
+with no PV thrombus, moderate ascites. She was given ondansetron 
+[REDACTED]mg IV and morphine [REDACTED] IV x1 in the ED.  
+On the floor, she is feeling improved but still has abdominal 
+distention and discomfort.  
+ROS: +Abdominal distention and pain. No black/bloody stools. No 
+leg pain or swelling. No fevers or chills. Denies chest pain, 
+nausea, vomiting. No dysuria or frequency. 
+ 
+Past Medical History:
+[REDACTED]. HCV Cirrhosis  
+[REDACTED]. No history of abnormal Pap smears.  
+[REDACTED]. She had calcification in her breast, which was removed  
+previously and per patient not, it was benign.  
+[REDACTED]. For HIV disease, she is being followed by Dr. [REDACTED] and Dr.  
+[REDACTED] at [REDACTED].  
+[REDACTED]. COPD  
+[REDACTED]. Past history of smoking.  
+[REDACTED]. She also had a skin lesion, which was biopsied and showed  
+skin cancer per patient report and is scheduled for a complete  
+removal of the skin lesion in [REDACTED].  
+[REDACTED]. She also had another lesion in her forehead with purple  
+discoloration. It was biopsied to exclude the possibility of  
+[REDACTED]'s sarcoma, the results is pending.  
+[REDACTED]. A [REDACTED] hypoechoic lesion on her ultrasound on [REDACTED]  
+and is being monitored by an MRI.  
+10. History of dysplasia of anus in [REDACTED]. Bipolar affective disorder, currently manic, mild, and PTSD. 
+ 
+[REDACTED]. History of cocaine and heroin use.  
+
+ 
+Social History:
+Lives in [REDACTED], MA with her husband. Works as a high school teacher. No tobacco use. Occasional alcohol use ([REDACTED] glasses of wine per week). No illicit drug use. Regular exercise [REDACTED] times per week.
+Family History:
+She a total of [REDACTED] siblings, but she is not  talking to most of 
+them. She only has [REDACTED] brother that she is in  touch with and 
+lives in [REDACTED], MA. She is not aware of any  
+known GI or liver disease in her family.  
+Her last alcohol consumption was [REDACTED] drink [REDACTED]. No  
+regular alcohol consumption. Last drug use [REDACTED]. She  
+quit smoking [REDACTED].  
+
+ 
+Physical Exam:
+ADMISSION PHYSICAL EXAM:  
+VS: T98.1 105/57 79 20 97RA [REDACTED]kg  
+GENERAL: Thin chronically ill appearing woman in no acute 
+distress  
+HEENT: Sclera anicteric, MMM, no oral lesions  
+HEART: RRR, normal S1 S2, no murmurs  
+LUNGS: Clear, no wheezes, rales, or rhonchi  
+ABD: Significant distention with visible veins, bulging flanks, 
+nontender to palpation, tympanitic on percussion, normal bowel 
+sounds  
+EXT: no lower extremity edema, [REDACTED]+ DP and PT pulses  
+NEURO: alert and oriented, not confused, no asterixis
+
+DISCHARGE PE:
+VS: T 98.4 BP 95/55 (SBP 90-105) HR 80 RR 18 O2 95RA  
+I/O 240/150 this am  
+GENERAL: Thin chronically ill appearing woman in no acute 
+distress  
+HEENT: Sclera anicteric, MMM, no oral lesions  
+HEART: RRR, normal S1 S2, no murmurs  
+LUNGS: Clear, no wheezes, rales, or rhonchi  
+ABD: Significant distention with visible veins, bulging flanks, 
+nontender to palpation, tympanitic on percussion, normal bowel 
+sounds  
+EXT: no lower extremity edema, [REDACTED]+ DP and PT pulses  
+NEURO: alert and oriented, not confused, no asterixis
+ 
+Pertinent Results:
+LABS ON ADMISSION:
+06/27/2180 04:10PM BLOOD WBC-6.8 RBC-3.45 Hgb-11.9 Hct-34.2 MCV-99 
+MCH-34.5 MCHC-34.8 RDW-16.1 Plt 89
+06/27/2180 04:10PM BLOOD PT-16.8 PTT-32.4 INR-1.5
+06/27/2180 04:10PM BLOOD Glucose-95 UreaN-28 Creat-0.8 Na-125 
+K-5.1 Cl-95 HCO3-22 AnGap-13
+06/27/2180 04:10PM BLOOD ALT-145 AST-189 AlkPhos-125 
+TotBili-2.1 Albumin-2.6
+06/27/2180 04:10PM BLOOD Calcium-8.4 Phos-3.1 Mg-2.0
+06/27/2180 04:39PM BLOOD Lactate-1.8
+
+LABS ON DISCHARGE:
+07/01/2180 05:10AM BLOOD WBC-5.9 RBC-3.28 Hgb-11.2 Hct-32.1 MCV-98 
+MCH-34.1 MCHC-34.9 RDW-15.8 Plt 105
+07/01/2180 05:10AM BLOOD PT-15.9 PTT-31.2 INR-1.4
+07/01/2180 05:10AM BLOOD Glucose-88 UreaN-24 Creat-0.7 Na-128 
+K-4.8 Cl-97 HCO3-24 AnGap-11
+07/01/2180 05:10AM BLOOD ALT-132 AST-168 AlkPhos-118 
+TotBili-1.9 Albumin-2.8
+07/01/2180 05:10AM BLOOD Calcium-8.6 Phos-2.9 Mg-1.9
+
+MICRO:
+06/27/2180 [REDACTED]      Source: [REDACTED]. 
+
+                            **FINAL REPORT [REDACTED]**
+
+   URINE CULTURE (Final [REDACTED]): 
+      MIXED BACTERIAL FLORA ( >= [REDACTED] COLONY TYPES), CONSISTENT 
+WITH SKIN
+      AND/OR GENITAL CONTAMINATION. 
+
+[REDACTED] PERITONEAL FLUID      PERITONEAL FLUID. 
+
+   [REDACTED] (Final [REDACTED]): 
+      1+    (<[REDACTED] per 1000X FIELD):   POLYMORPHONUCLEAR 
+LEUKOCYTES. 
+      NO MICROORGANISMS SEEN. 
+      This is a concentrated smear made by cytospin method, 
+please refer to
+      hematology for a quantitative white blood cell count.. 
+
+   FLUID CULTURE (Final [REDACTED]):    NO GROWTH. 
+
+   ANAEROBIC CULTURE (Preliminary):    NO GROWTH[REDACTED]): 
+      1+    (<[REDACTED] per 1000X FIELD):   POLYMORPHONUCLEAR 
+LEUKOCYTES. 
+      NO MICROORGANISMS SEEN. 
+      This is a concentrated smear made by cytospin method, 
+please refer to
+      hematology for a quantitative white blood cell count.. 
+
+   FLUID CULTURE (Final [REDACTED]):    NO GROWTH. 
+
+   ANAEROBIC CULTURE (Preliminary):    NO GROWTH. 
+
+Diagnositc Para:
+06/27/2180 07:00PM ASCITES WBC-225 RBC-180 Polys-18 Lymphs-42 
+Monos-25 Mesothe-3 Macroph-10 Other-2
+06/27/2180 07:00PM ASCITES TotProt-0.3 Glucose-105 LDH-125
+
+IMAGING:
+[REDACTED] CXR- No acute cardiopulmonary abnormality.  
+06/27/2180 RUQ US-  
+1. Extremely coarse and nodular liver echotexture consistent 
+with a history of cirrhosis.  
+[REDACTED]. Moderate ascites.  
+[REDACTED]. Patent portal vein.
+ 
+Brief Hospital Course:
+[REDACTED] female with HIV on HAART, HCV cirrhosis with ascites and HE, h/o 
+IVDU, COPD, bipolar disorder presents with abdominal discomfort 
+due to recurrent ascites.  
+ 
+# ASCITES. Now diuretic refractory given last tap was [REDACTED]ago with 3L removed and she has already built up moderate 
+ascites. Infectious workup negative, with CXR clear, UA 
+contaminated but not grossly positive so will f/u culture, 
+diagnostic para with only 225 WBC, RUQ US with no PV thrombus. 
+Compliant with diuretics but not following low sodium diet or 
+fluid restriction. Dr. [REDACTED] discussed possible TIPS in 
+the office but due to lung disease, that was on hold pending 
+further cardiac evaluation. Diuretics were recently decreased 
+due to hyponatremia and hyperkalemia. Held spironolactone for 
+now due to K [REDACTED] and increased lasix 20 -> [REDACTED]. No evidence of 
+severe hyponatremia (Na<120) or renal failure Cr>2.0 to stop 
+diuretics at present. Diagnostic paracentesis negative for 
+infection. Ascitic total protein [REDACTED] so warrants SBP prophylaxis 
+(<1.0) and fortunately already on Bactrim for PCP prophylaxis 
+which would be appropriate for SBP ppx also. Patient did admit 
+to eating pizza and some [REDACTED] food prior to 
+admission. She had therapeutic paracentesis with [REDACTED]and received 37.5G albumin IV post procedure. She felt much 
+better with resolution of abdominal discomfort. Patient is 
+scheduled for repeat paracentesis as outpatient on [REDACTED].  
+
+# HEPATIC ENCEPHALOPATHY. History of HE from Hep C cirrhosis. 
+Now with mild encephalopathy (hallucinations and forgetfulness) 
+due to medication noncompliance, but not acutely encephalopathic 
+and without asterixis on exam. Infectious workup negative thus 
+far. Continue lactulose 30mL TID and titrate to [REDACTED] BMs [REDACTED] and 
+continue rifaximin [REDACTED] BID. 
+ 
+# HYPONATREMIA. Na [REDACTED] on admission, [REDACTED], and [REDACTED]. Likely due to [REDACTED] spacing from worsening 
+ascites and fluid overload. [REDACTED] therapeutic paracentesis with albumin replacement.
+
+# CIRRHOSIS, HEPATITIS C. MELD score of [REDACTED] and [REDACTED] Pugh 
+class B on this admission. Now decompensated due to ascites. 
+Hepatitis C genotype IIIB. Dr. [REDACTED] starting 
+sofosbuvir and velpatasvir with patient in clinic and the 
+insurance process was started by her office. No history of EGD, 
+needs this as outpatient for varices screening.  
+ 
+# NUTRITION. Unclear if truly compliant with low salt diet. Poor 
+oral intake. Low albumin [REDACTED] on admission. Met with nutrition. 
+ 
+# COAGULOPATHY. INR [REDACTED]. No evidence of active 
+bleeding. Very mild thrombocytopenia with plts [REDACTED].  
+ 
+# HIV. Most recent CD4 [REDACTED]. On HAART. No established ID 
+provider. Continue [REDACTED] and [REDACTED], [REDACTED] DS [REDACTED] for 
+PCP prophylaxis. Needs outpatient ID appointment  
+
+# COPD. Stable. States she is on intermittent home O2 for 
+comfort at night and with abdominal distentiom. Continued home 
+COPD meds and home O2 as needed 
+
+**Transitional Issues**
+- Discontinued spironolactone due to elevated potassium
+- Increased furosemide to [REDACTED]
+- Please recheck electrolytes at next visit
+- Had paracentesis 06/28/2180 with 4.3 L removed, received [REDACTED]G 
+albumin
+- Needs outpatient ID provider
+- Patient needs more frequent paracentesis
+ 
+Medications on Admission:
+The Preadmission Medication list is accurate and complete.
+[REDACTED]. Albuterol Inhaler 2 PUFF IH Q6H:PRN wheezing, SOB 
+[REDACTED]. Emtricitabine ([REDACTED]) 1 TAB PO DAILY 
+[REDACTED]. Furosemide [REDACTED] PO DAILY 
+[REDACTED]. [REDACTED] PO BID 
+5. Spironolactone [REDACTED] PO DAILY 
+[REDACTED]. Acetaminophen [REDACTED] PO Q6H:PRN pain,fever 
+7. Tiotropium Bromide 1 CAP IH DAILY 
+8. Rifaximin [REDACTED] PO BID 
+9. Calcium Carbonate [REDACTED] PO BID 
+10. Lactulose [REDACTED] PO TID 
+11. Sulfameth/Trimethoprim DS 1 TAB PO DAILY 
+
+ 
+Discharge Medications:
+1. Acetaminophen [REDACTED] PO Q6H:PRN pain,fever 
+2. [REDACTED] 2 PUFF IH Q6H:PRN wheezing, SOB 
+[REDACTED]. Calcium Carbonate [REDACTED] PO BID 
+[REDACTED]. Emtricitabine ([REDACTED]) 1 TAB PO DAILY 
+5. Furosemide [REDACTED] PO DAILY 
+[REDACTED]. Lactulose [REDACTED] PO TID 
+[REDACTED]. [REDACTED] PO BID 
+[REDACTED]. [REDACTED] PO BID 
+9. Sulfameth/Trimethoprim DS 1 TAB PO DAILY 
+10. Tiotropium Bromide 1 CAP IH DAILY 
+
+ 
+Discharge Disposition:
+Home
+ 
+Discharge Diagnosis:
+Primary:  diuretic refractory ascites
+Secondary: HCV cirrhosis, HIV, hyponatremia, COPD
+
+ 
+Discharge Condition:
+Mental Status: Clear and coherent.
+Level of Consciousness: Alert and interactive.
+Activity Status: Ambulatory - Independent.
+
+ 
+Discharge Instructions:
+Dear Ms. [REDACTED],
+
+It was a pleasure to take care of you at [REDACTED]. You were admitted with abdominal fullness and 
+pain from your ascites. You had a diagnostic and therapeutic 
+paracentesis with 4.3 L removed. Your spironolactone was 
+discontinued because your potassium was high. Your lasix was 
+increased to [REDACTED]. You are scheduled for another 
+paracentesis on [REDACTED] prior to your other appointments [REDACTED]. 
+Please call [REDACTED] to find out the time of the paracentesis. 
+Please continue to follow a low sodium diet and fluid 
+restriction. You should call your liver doctor or return to the 
+emergency room if you have abdominal pain, fever, chills, 
+confusion, or other concerning symptoms.
+
+Sincerely,
+Your [REDACTED] medical team
+ 
+Followup Instructions:
+[REDACTED]. Follow up with Dr. [REDACTED] ([REDACTED]) in [REDACTED] - call [REDACTED]
+2. Schedule EGD and colonoscopy at GI - call [REDACTED]
+3. Follow up with Dr. [REDACTED] (ID) in [REDACTED] - call 617-555-0167
+4. Get labs before next appointment
+"
+10000032-DS-23,10000032,29079034,DS,23,2180-07-25 00:00:00,2180-07-25 21:42:00," 
+Name:  [REDACTED]                     Unit No:   MRN-8472951
+
+Admission Date:  [REDACTED]              Discharge Date:   [REDACTED]
+
+Date of Birth[REDACTED]03/22/2134             Sex:   F
+ 
+Service: MEDICINE
+ 
+Allergies: 
+Percocet / Vicodin
+ 
+Attending: Dr. [REDACTED], MD
+ 
+Chief Complaint:
+altered mental status
+ 
+Major Surgical or Invasive Procedure:
+none
+ 
+History of Present Illness:
+Mrs. [REDACTED] is a 46-year-old female with HIV on HAART, COPD, HCV 
+cirrhosis complicated by ascites and hepatic encephalopathy who 
+initially presented to the ED [REDACTED] with hypotension after a 
+paracentesis.  
+The patient has had accelerated decompensation of her cirrhosis 
+recently with worsening ascites, and she is maintained on [REDACTED] paracentesis. She was at her regular session [REDACTED] 
+when she had hypotension to SBP [REDACTED] and felt lightheadedness. 
+Per the patient, that's when her memory started to get fuzzy. 
+She does not have much recollection of what happened since then. 
+Her outpatient hepatologist saw her and recommended that she go 
+to the ED. In the ED, she was evaluated and deemed to have 
+stable blood pressure. She was discharged home. At home, she had 
+worsening mental status with her daughter getting concerned, and 
+she returned to the ED.  
+In the ED, initial vitals were [REDACTED] RA. The 
+patient was only oriented to person. Her labs were notable for 
+Na [REDACTED], K [REDACTED], Cr [REDACTED] (baseline [REDACTED]), ALT [REDACTED], AST [REDACTED], TBili 
+[REDACTED], Lip [REDACTED], INR [REDACTED]. Initial EKG showed sinus rhythm with 
+peaked T waves. Her head CT was negative for any acute 
+processes. She received ceftriaxone 2gm x1, regular insulin 10U, 
+calcium gluconate [REDACTED]g, lactulose [REDACTED] x2, and [REDACTED] albumin.  
+On transfer, vitals were [REDACTED] 84/40 [REDACTED] NC. On arrival to 
+the MICU, patient was more alert and conversant. She has no 
+abdominal pain, nausea, vomiting, chest pain, or difficulty 
+breathing. She has a chronic cough that is not much changed. She 
+has not had any fever or chills. She reports taking all of her 
+medications except for lactulose, which she thinks taste 
+disgusting.  
+ 
+Past Medical History:
+- HCV Cirrhosis: genotype 3a  
+- HIV: on HAART, 06/2180 CD4 count [REDACTED], [REDACTED] HIV viral load 
+undetectable  
+- COPD: [REDACTED] PFT showed FVC [REDACTED] ([REDACTED]), FEV1 [REDACTED] ([REDACTED]), 
+FEFmax [REDACTED] ([REDACTED])  
+- Bipolar Affective Disorder  
+- PTSD  
+- Hx of cocaine and heroin abuse  
+- Hx of skin cancer per patient report  
+ 
+Social History:
+Lives in [REDACTED] in a studio apartment. Currently unemployed and on disability. Former home health aide. Good adherence to HIV medications but inconsistent with hepatitis C treatment and diuretics. Former IV drug user, clean for [REDACTED]. No current alcohol use. No tobacco use.
+Family History:
+She a total of [REDACTED] siblings, but she is not  talking to most of 
+them. She only has [REDACTED] brother that she is in  touch with and 
+lives in [REDACTED], MA. She is not aware of any known GI or liver 
+disease in her family.  
+ 
+Physical Exam:
+ADMISSION PHYSICAL EXAM:
+========================
+VITALS: reviewed in OMR 
+GENERAL: Alert and interactive. In no acute distress.
+HEENT: PERRL, EOMI. Sclera anicteric and without injection. MMM.
+NECK: No cervical lymphadenopathy. No JVD.
+CARDIAC: Regular rhythm, normal rate. Audible S1 and S2. No
+murmurs/rubs/gallops.
+LUNGS: Clear to auscultation bilaterally. No wheezes, rhonchi or
+rales. No increased work of breathing.
+BACK: No CVA tenderness.
+ABDOMEN: Normal bowels sounds, non distended, non-tender to deep
+palpation in all [REDACTED] quadrants. No organomegaly.
+EXTREMITIES: No clubbing, cyanosis, or edema. Pulses DP/Radial 
+2+
+bilaterally.
+SKIN: Warm. Cap refill <2s. No rashes.
+NEUROLOGIC: AOx3. CN2-12 intact. cogwheel UE b/l. Increased tone
+in LEs, [REDACTED] strength b/l [REDACTED]. Normal sensation.
+
+DISCHARGE PHYSICAL EXAM
+======================
+24 HR Data (last updated [REDACTED] @ [REDACTED])
+    Temp: [REDACTED] (Tm [REDACTED]), BP: [REDACTED] (130-153/80-90), HR: [REDACTED]
+([REDACTED]-104), RR: [REDACTED] ([REDACTED]), O2 sat: [REDACTED] ([REDACTED]), O2 delivery: Ra 
+
+
+GENERAL: In no acute distress. Talking very quietly.
+CARDIAC: Regular rhythm, normal rate. [REDACTED] and S2. No
+murmurs/rubs/gallops.
+LUNGS: Clear to auscultation bilaterally. No wheezes, rhonchi or
+rales. No increased work of breathing.
+ABDOMEN: Normal bowels sounds, non distended, non-tender to deep
+palpation in all [REDACTED] quadrants.
+EXTREMITIES: No clubbing, cyanosis, or edema. Pulses DP/Radial 
+2+
+bilaterally.
+SKIN: Warm.
+NEUROLOGIC: AOx3. CN2-12 intact. [REDACTED] UE b/l. Increased tone
+in LEs, [REDACTED] strength b/l [REDACTED]. Normal sensation.
+
+ 
+Pertinent Results:
+ADMISSION LABS:
+===============
+07/24/2180 10:30PM BLOOD WBC-8.6 RBC-4.03* Hgb-12.8* Hct-38.2* 
+MCV-95 MCH-31.8 MCHC-33.5 RDW-13.0 RDWSD-45.2 Plt 143
+07/24/2180 10:30PM BLOOD Neuts-48.1 Lymphs-33.4 Monos-15.9* 
+Eos-2.0 Baso-0.6 Im Grans-0 AbsNeut-4.13 AbsLymp-2.86 
+AbsMono-1.36* AbsEos-0.17 AbsBaso-0.05
+07/24/2180 10:30PM BLOOD PT-13.2 PTT-23.4* INR-1.1
+07/24/2180 10:30PM BLOOD Glucose-100 UreaN-17 Creat-0.8 Na-132* 
+K-5.8* Cl-98 HCO3-19* AnGap-15
+07/24/2180 10:30PM BLOOD ALT-18 AST-38 AlkPhos-39* TotBili-0.4
+07/24/2180 10:30PM BLOOD Lipase-47
+07/24/2180 10:30PM BLOOD cTropnT-<0.01
+07/24/2180 10:30PM BLOOD Albumin-4.0 Calcium-9.9 Phos-3.7 Mg-2.0
+07/24/2180 10:30PM BLOOD VitB12-570
+07/24/2180 10:30PM BLOOD TSH-1.4
+07/25/2180 07:00AM BLOOD Trep Ab-NEG
+07/24/2180 10:30PM BLOOD ASA-NEG Ethanol-NEG Acetmnp-NEG 
+Tricycl-NEG
+
+IMAGING:
+========
+07/24/2180 Imaging CT HEAD W/O CONTRAST  
+FINDINGS:  
+There is no evidence of infarction, hemorrhage, edema, or mass.  
+There is 
+prominence of the ventricles and sulci suggestive of 
+involutional changes. 
+There is no evidence of fracture.  The visualized portion of the 
+remaining 
+paranasal sinuses and middle ear cavities are clear.  The 
+visualized portion of the orbits are unremarkable apart from 
+bilateral lens replacements. 
+IMPRESSION: 
+[REDACTED]. No acute intracranial abnormality.  No hydrocephalus. 
+
+07/24/2180 Imaging CHEST (PA & LAT) 
+IMPRESSION:  
+Mild atelectasis in the lung bases without focal consolidation.  
+
+Age-indeterminate moderate to severe compression deformity of a 
+low thoracic vertebral body. 
+
+DISCHARGE LABS:
+===============
+07/25/2180 06:21AM BLOOD WBC-7.0 RBC-4.02* Hgb-12.9* Hct-38.1* 
+MCV-95 MCH-32.1* MCHC-33.9 RDW-12.8 RDWSD-44.4 Plt 156
+07/25/2180 06:21AM BLOOD Glucose-88 UreaN-10 Creat-0.7 Na-140 
+K-4.0 Cl-104 HCO3-24 AnGap-12
+07/25/2180 06:21AM BLOOD Calcium-9.5 Phos-3.2 Mg-1.9 [REDACTED] male with Parkinson's disease, dyslipidemia, and a
+history of prostate cancer (s/p prostatectomy) who was referred
+to the ED by his neurologist for worsening gait, falls, and
+visual hallucinations concerning for progression of his
+neurologic disorder. 
+
+ACUTE/ACTIVE ISSUES:
+====================
+Parkinson's disease
+Lewy Body Dementia 
+#Visual Hallucinations 
+The patient appears to have acute on chronic progression of his
+Parkinson's disease. Unclear if this is disease progression or
+underlying medical cause. Continued [REDACTED], [REDACTED], and 
+[REDACTED]. Neurology recommended started [REDACTED] for his 
+hallucinations.
+
+He was evaluated by physical therapy who recommended rehab. This 
+recommendation was discussed with the family who opted for 
+discharge to home with home physical therapy as this was in line 
+with the patient's goals of care.
+
+TRANSITIONAL ISSUES:
+[] f/u visual hallucination symptoms on [REDACTED]
+[] f/u physical therapy at home
+ 
+Medications on Admission:
+The Preadmission Medication list may be inaccurate and requires 
+futher investigation.
+1. Rasagiline [REDACTED] PO DAILY 
+2. [REDACTED] PO TID 
+[REDACTED]. rivastigmine [REDACTED] transdermal DAILY 
+4. Pravastatin [REDACTED] PO QPM 
+5. Cyanocobalamin Dose is Unknown  PO DAILY 
+6. Loratadine [REDACTED] PO DAILY 
+
+ 
+Discharge Medications:
+1.  QUEtiapine Fumarate [REDACTED] PO QHS 
+RX *quetiapine [REDACTED] 1 tablet(s) by mouth AT NIGHT Disp #*30 
+Tablet Refills:*0 
+2.  Loratadine [REDACTED] PO DAILY  
+3.  Pramipexole [REDACTED] PO TID  
+4.  Pravastatin [REDACTED] PO QPM  
+5.  Rasagiline [REDACTED] PO DAILY  
+[REDACTED].  rivastigmine [REDACTED] transdermal DAILY  
+
+ 
+Discharge Disposition:
+Home With Service
+ 
+Facility:
+[REDACTED]
+ 
+Discharge Diagnosis:
+Lewy Body Dementia
+ 
+Discharge Condition:
+Mental Status: Confused - sometimes.
+Level of Consciousness: Alert and interactive.
+
+ 
+Discharge Instructions:
+Dear Mr. [REDACTED], 
+
+It was a privilege caring for you at [REDACTED]. 
+
+WHY WAS I IN THE HOSPITAL? 
+- You were sent to the emergency room by your neurologist who 
+was concerned that you were having visual hallucinations.
+
+WHAT HAPPENED TO ME IN THE HOSPITAL? 
+- You were started on a new medication to help treat your 
+symptoms.
+
+WHAT SHOULD I DO AFTER I LEAVE THE HOSPITAL? 
+- Continue to take all your medicines and keep your 
+appointments. 
+
+We wish you the best! 
+
+Sincerely, 
+Your [REDACTED] 
+ 
+Followup Instructions:
+[REDACTED]. Follow up with Dr. [REDACTED] (Neurology) in [REDACTED]. Follow up with your PCP Dr. [REDACTED] in [REDACTED]. Continue physical therapy at home as scheduled
+"
+10000117-DS-21,10000117,22927623,DS,21,2181-11-15 00:00:00,2181-11-15 15:04:00," 
+Name:  [REDACTED]                 Unit No:   MRN-6381472
+ 
+Admission Date:  11/14/2181              Discharge Date:   [REDACTED]
+ 
+Date of Birth:  [REDACTED]             Sex:   F
+ 
+Service: MEDICINE
+ 
+Allergies: 
+omeprazole
+ 
+Attending: Dr. [REDACTED], MD.
+ 
+Chief Complaint:
+dysphagia 
+ 
+Major Surgical or Invasive Procedure:
+Upper endoscopy 11/14/2181
+
+ 
+History of Present Illness:
+ [REDACTED] female w/ anxiety and [REDACTED] of dysphagia who p/w worsened 
+foreign body sensation. 
+
+She describes feeling as though food gets stuck in her neck when 
+she eats. She put herself on a pureed diet to address this over 
+[REDACTED]. When she has food stuck in the throat, she 
+almost feels as though she cannot breath, but she denies trouble 
+breathing at any other time. She does not have any history of 
+food allergies or skin rashes. 
+ 
+In the ED, initial vitals:  [REDACTED] RA 
+Imaging showed: CXR showed a prominent esophagus
+Consults: GI was consulted.
+
+Pt underwent EGD which showed a normal appearing esophagus. 
+Biopsies were taken.
+
+Currently, she endorses anxiety about eating. She would like to 
+try eating here prior to leaving the hospital. 
+
+ 
+Past Medical History:
+- GERD  
+ - Hypercholesterolemia  
+ - Kidney stones  
+ - Mitral valve prolapse  
+ - Uterine fibroids  
+ - Osteoporosis  
+ - Migraine headaches 
+ 
+Social History:
+Lives in [REDACTED] with her spouse and [REDACTED] children. Works as a software engineer. Never smoker. No alcohol use. No illicit drugs. Exercises regularly with yoga and swimming.
+Family History:
++ HTN - father  
++ Dementia - father  
+ 
+ 
+Physical Exam:
+=================
+ADMISSION/DISCHARGE EXAM
+=================
+VS:  97.9  PO 109 / 71 70 16 97 ra 
+GEN: Thin anxious woman, lying in bed, no acute distress  
+HEENT: Moist MM, anicteric sclerae, NCAT, PERRL, EOMI  
+NECK: Supple without LAD, no JVD  
+PULM: CTABL no w/c/r
+COR: RRR (+)S1/S2 no m/r/g  
+ABD: Soft, non-tender, non-distended, +BS, no HSM  
+EXTREM: Warm, well-perfused, no peripheral edema  
+NEURO: CN II-XII grossly intact, motor function grossly normal, 
+sensation grossly intact  
+ 
+Pertinent Results:
+=============
+ADMISSION LABS
+=============
+
+11/14/2181 08:27AM BLOOD WBC-5.0 RBC-4.82 Hgb-14.9 Hct-44.4 MCV-92 
+MCH-30.9 MCHC-33.6 RDW-12.1 RDWSD-41.3 Plt 245
+11/14/2181 08:27AM BLOOD PT-12.1 PTT-28.6 INR-1.0
+11/14/2181 08:27AM BLOOD Glucose-85 UreaN-8 Creat-0.9 Na-142 K-3.6 
+Cl-104 HCO3-22 AnGap-20
+11/14/2181 08:27AM BLOOD ALT-11 AST-16 LD(LDH)-154 AlkPhos-63 
+TotBili-1.0
+11/14/2181 08:27AM BLOOD Albumin-4.8
+=============
+IMAGING
+=============
+
+CXR 11/14/2181: 
+IMPRESSION:  
+  
+Prominent esophagus on lateral view, without air-fluid level. 
+Given the patient's history and radiographic appearance, barium 
+swallow is indicated either now or electively. 
+  
+NECK X-ray 11/14/2181:
+IMPRESSION:  
+  
+Within the limitation of plain radiography, no evidence of 
+prevertebral soft tissue swelling or soft tissue mass in the 
+neck. 
+ 
+
+EGD: 11/14/2181
+ Impression: Hiatal hernia
+Angioectasia in the stomach
+Angioectasia in the duodenum
+ (biopsy, biopsy)
+Otherwise normal EGD to [REDACTED] part of the duodenum 
+
+Recommendations: - no obvious anatomic cause for the patient's 
+symptoms
+- follow-up biopsy results to rule out eosinophilic esophagitis
+- follow-up with Dr. [REDACTED] if biopsies show eosinophilic 
+esophagitis 
+
+ 
+Brief Hospital Course:
+Ms. [REDACTED] is a [REDACTED] female with history of GERD who presents with 
+subacute worsening of dysphagia and foreign body sensation. This 
+had worsened to the point where she placed herself on a pureed 
+diet for [REDACTED]. She underwent CXR which showed a 
+prominent esophagus but was otherwise normal. She was evaluated 
+by [REDACTED] and underwent an upper endoscopy on [REDACTED]. 
+This showed a normal appearing esophagus. Biopsies were taken. 
+
+TRANSITIONAL ISSUES:
+-f/u biopsies from EGD
+-if results show eosinophilic esophagitis, follow-up with Dr. [REDACTED]. 
+Call 617-555-0123 for management
+-pt should undergo barium swallow as an outpatient for further 
+workup of her dysphagia
+-f/u with ENT as planned
+#Code: Full (presumed) 
+ 
+Medications on Admission:
+The Preadmission Medication list is accurate and complete.
+[REDACTED]. [REDACTED] PO BID 
+
+ 
+Discharge Medications:
+[REDACTED].  [REDACTED] PO BID  
+
+ 
+Discharge Disposition:
+Home
+ 
+Discharge Diagnosis:
+PRIMARY DIAGNOSIS:
+-dysphagia and foreign body sensation
+
+SECONDARY DIAGNOSIS:
+-GERD 
+
+ 
+Discharge Condition:
+Mental Status: Clear and coherent.
+Level of Consciousness: Alert and interactive.
+Activity Status: Ambulatory - Independent.
+
+ 
+Discharge Instructions:
+Dear Ms. [REDACTED],
+
+You were hospitalized at [REDACTED].
+
+You came in due to difficulty swallowing. You had an endoscopy 
+to look for any abnormalities in the esophagus. Thankfully, this 
+was normal. They took biopsies, and you will be called with the 
+results. You should have a test called a barium swallow as an 
+outpatient.
+
+We wish you all the best!
+-Your [REDACTED] Team 
+ 
+Followup Instructions:
+[REDACTED]. Follow up with Dr. [REDACTED] (Gastroenterology) in [REDACTED] for biopsy results
+[REDACTED]. Schedule barium swallow test at [REDACTED] - call 617-555-0145
+3. Follow up with ENT Dr. [REDACTED] in [REDACTED] - call 617-555-0167
+"
+10000117-DS-22,10000117,27988844,DS,22,2183-09-21 00:00:00,2183-09-29 16:23:00," 
+Name:  [REDACTED]                 Unit No:   MRN-6381472
+ 
+Admission Date:  [REDACTED]              Discharge Date:   [REDACTED]
+ 
+Date of Birth:  [REDACTED]             Sex:   F
+ 
+Service: ORTHOPAEDICS
+ 
+Allergies: 
+omeprazole / Iodine and Iodide Containing Products / 
+hallucinogens
+ 
+Attending: Dr. [REDACTED], MD.
+ 
+Chief Complaint:
+Left hip pain 
+ 
+Major Surgical or Invasive Procedure:
+Status post left CRPP [REDACTED]
+
+ 
+History of Present Illness:
+REASON FOR CONSULT: Femur fracture
+
+HPI: [REDACTED] female presents with the above fracture s/p mechanical
+fall. [REDACTED], pt was walking her dog, when dog
+pulled on leash. Pt fell on L hip. Immediate pain. Pain worsened with movement. Denies Head strike, LOC or blood thinners.
+Denies numbness or weakness in the extremities. 
+ 
+Past Medical History:
+- GERD  
+ - Hypercholesterolemia  
+ - Kidney stones  
+ - Mitral valve prolapse  
+ - Uterine fibroids  
+ - Osteoporosis  
+ - Migraine headaches 
+ 
+Social History:
+Lives in [REDACTED] with her spouse and [REDACTED] children. Works as a software engineer. Never smoker. No alcohol use. No illicit drugs. Exercises regularly with yoga and swimming.
+Family History:
++ HTN - father  
++ Dementia - father  
+ 
+ 
+Physical Exam:
+General: Well-appearing female in no acute distress.
+
+Left Lower extremity:
+- Skin intact
+- No deformity, edema, ecchymosis, erythema, induration
+- Soft, non-tender thigh and leg
+- Full, painless ROM knee, and ankle
+- Fires EHL/FHL/TA/GS
+- SILT S/S/SP/DP/T distributions
+- [REDACTED]+ pedal pulses, WWP
+ 
+Brief Hospital Course:
+The patient presented to the emergency department and was 
+evaluated by the orthopedic surgery team. The patient was found 
+to have a left valgus impacted femoral neck fracture and was 
+admitted to the orthopedic surgery service. The patient was 
+taken to the operating room on [REDACTED] for left closed reduction 
+and percutaneous pinning of hip, which the patient tolerated 
+well. For full details of the procedure please see the 
+separately dictated operative report. The patient was taken from 
+the OR to the PACU in stable condition and after satisfactory 
+recovery from anesthesia was transferred to the floor. The 
+patient was initially given IV fluids and IV pain medications, 
+and progressed to a regular diet and oral medications by POD#1. 
+The patient was given prophylactic antibiotics and 
+anticoagulation per routine. The patient's home medications were 
+continued throughout this hospitalization. The patient worked 
+with physical therapy who determined that discharge to home with services was 
+appropriate. The post-operative hospital course was otherwise 
+unremarkable.
+
+At the time of discharge the patient's pain was well controlled 
+with oral medications, incisions were clean/dry/intact, and the 
+patient was voiding/moving bowels spontaneously. The patient is  
+weightbearing as tolerated in the left lower extremity, and will 
+be discharged on [REDACTED] for DVT prophylaxis. The patient will 
+follow up with Dr. [REDACTED] routine. A thorough discussion 
+was had with the patient regarding the diagnosis and expected 
+post-discharge course including reasons to call the office or 
+return to the hospital, and all questions were answered. The 
+patient was also given written instructions concerning 
+precautionary instructions and the appropriate follow-up care. 
+The patient expressed readiness for discharge.
+
+ 
+Medications on Admission:
+The Preadmission Medication list is accurate and complete.
+[REDACTED]. Lactaid (lactase) [REDACTED] unit oral DAILY:PRN 
+[REDACTED]. Calcium Citrate + D (calcium citrate-vitamin D3) [REDACTED]-unit oral DAILY 
+
+ 
+Discharge Medications:
+1.  Acetaminophen [REDACTED] PO Q6H:PRN Pain - Mild/Fever  
+2.  Bisacodyl [REDACTED] PO/PR DAILY:PRN Constipation  
+3.  Docusate Sodium [REDACTED] PO BID  
+4.  Enoxaparin Sodium [REDACTED] SC QHS 
+RX *enoxaparin [REDACTED] Subcutaneously Nightly Disp 
+#*30 Syringe Refills:*0 
+5.  OxyCODONE (Immediate Release) [REDACTED] PO Q4H:PRN Pain - 
+Moderate 
+RX *oxycodone [REDACTED] tablet(s) by mouth q4 PRN Disp #*25 Tablet 
+Refills:*0 
+6.  Senna [REDACTED] PO BID  
+7.  Calcium Citrate + D (calcium citrate-vitamin D3) [REDACTED]-unit oral DAILY  
+8.  Lactaid (lactase) [REDACTED] unit oral DAILY:PRN  
+9.  Multivitamins 1 TAB PO DAILY  
+10.  Vitamin D 400 UNIT PO DAILY  
+
+ 
+Discharge Disposition:
+Home With Service
+ 
+Facility:
+[REDACTED]
+ 
+Discharge Diagnosis:
+Left valgus impacted femoral neck fracture
+
+ 
+Discharge Condition:
+AVSS
+NAD, A&Ox3
+LLE: Incision well approximated. Dressing clean and dry. [REDACTED]FHL, EHL, TA, GCS. SILT sensory/motor distributions. [REDACTED]+ DP 
+pulse, wwp distally.
+
+ 
+Discharge Instructions:
+INSTRUCTIONS AFTER ORTHOPAEDIC SURGERY:
+
+- You were in the hospital for orthopedic surgery. It is normal 
+to feel tired or ""washed out"" after surgery, and this feeling 
+should improve over [REDACTED]. 
+- Resume your regular activities as tolerated, but please follow 
+your weight bearing precautions strictly at all times.
+
+ACTIVITY AND WEIGHT BEARING:
+- Weightbearing as tolerated left lower extremity
+
+MEDICATIONS:
+  1)  Take [REDACTED]mg [REDACTED] around the clock. This is 
+an over the counter medication.
+  [REDACTED])  Add oxycodone as needed for increased pain. Aim to wean 
+off this medication in [REDACTED] or sooner.  This is an example on 
+how to wean down:
+Take [REDACTED] tablet [REDACTED] as needed x 1 day,
+then [REDACTED] tablet [REDACTED] as needed x 1 day,
+then [REDACTED] tablet [REDACTED] as needed x 1 day,
+then [REDACTED] tablet [REDACTED] as needed x [REDACTED], 
+then [REDACTED] tablet [REDACTED] as needed x [REDACTED],
+then [REDACTED] tablet every before bedtime as needed x 1 day.  
+Then continue with [REDACTED] for pain.
+  [REDACTED])  Do not stop the [REDACTED] until you are off of the narcotic 
+medication.
+  [REDACTED])  Per state regulations, we are limited in the amount of 
+narcotics we can prescribe. If you require more, you must 
+contact the office to set up an appointment because we cannot 
+refill this type of pain medication over the phone. 
+  5)  Narcotic pain relievers can cause constipation, so you 
+should drink [REDACTED] glasses of water [REDACTED] and continue 
+following the bowel regimen as stated on your medication 
+prescription list. These meds (senna, colace, miralax) are over 
+the counter and may be obtained at any pharmacy.
+  6)  Do not drink alcohol, drive a motor vehicle, or operate 
+machinery while taking narcotic pain relievers.
+  7)  Please take all medications as prescribed by your 
+physicians at discharge.
+  8)  Continue all home medications unless specifically 
+instructed to stop by your surgeon.
+      
+ANTICOAGULATION:
+- Please take  [REDACTED] for [REDACTED]
+ 
+Followup Instructions:
+[REDACTED]. Follow up with Dr. [REDACTED] (Orthopedics) in [REDACTED]. Continue physical therapy at home as scheduled
+[REDACTED]. Get X-rays of left hip before next appointment
+[REDACTED]. Call [REDACTED] if any concerns
+"
+10000248-DS-10,10000248,20600184,DS,10,2192-11-30 00:00:00,2192-11-30 19:49:00," 
+Name:  [REDACTED]                      Unit No:   MRN-9472851
+ 
+Admission Date:  11/29/2192              Discharge Date:   [REDACTED]
+ 
+Date of Birth:  04/12/2165             Sex:   M
+ 
+Service: MEDICINE
+ 
+Allergies: 
+No Known Allergies / Adverse Drug Reactions
+ 
+Attending: Dr. [REDACTED], MD.
+ 
+Chief Complaint:
+Right flank bruising and pain s/p fall
+ 
+Major Surgical or Invasive Procedure:
+None
+
+ 
+History of Present Illness:
+Mr. [REDACTED] is a [REDACTED] male with history of factor VIII deficiency who 
+presents with right neck swelling after snowboarding accident. 
+The patient reports that he fell while snowboarding with loss of 
+consciousness on [REDACTED]. He was initially seen at 
+[REDACTED] where CT imaging of head/neck showed no 
+intracranial hemorrhage. A CTA neck showed a thickened right 
+platysma muscle with surrounding hematoma and a focus of active 
+contrast extravasation within the right platysma muscle. He also 
+developed a right shoulder hematoma although shoulder plain 
+films didn't show acute abnormality. He was seen by BMC 
+[REDACTED] and gave him [REDACTED] dose of DDAVP IV. A factor VIII 
+assay was [REDACTED] and vW level was [REDACTED] per report. Per report, his 
+hemoglobin decreased from [REDACTED] on [REDACTED] to [REDACTED] on [REDACTED]. 
+Repeat imaging in [REDACTED] showed stable injuries. The 
+patient saw his hematologist on [REDACTED] and was found to have a 
+hemoglobin of [REDACTED]. Because of the continued mild decrease, the 
+patient followed up with his PCP Dr. [REDACTED] on [REDACTED] at which time his 
+hemoglobin was [REDACTED]. He was found to have an enlarging flank 
+hematoma, thus was referred given concern for retroperitoneal 
+bleed. The patient has been using DDAVP intranasally 
+intermittently since the accident. He denies lightheadedness or 
+palpitations, any increase in neck swelling over the course of 
+[REDACTED]. He does endorse pain in his right shoulder ([REDACTED] 
+resting, [REDACTED] moving), though this has improved over the course 
+of [REDACTED].  
+In the ED, initial vital signs were [REDACTED] 124/75 18 100%/RA. 
+Initial labs demonstrated hemoglobin [REDACTED], though repeat was 
+[REDACTED]. Chemistries and coags were unremarkable. FVIII activity was 
+[REDACTED]. A CTAP was performed which demonstrated muscular hemorrhage 
+along the flank, but no retroperitoneal bleed on preliminary 
+read. The patient's outpatient hematologist, Dr. [REDACTED], was 
+contacted and it was decided to give the patient desmopressin 
+0.3mg/kg IV. The patient was then admitted for futher 
+management.  
+Per review of records, the patient has a history of significant 
+bleeding after his circumcision, requiring blood transfusion. 
+Throughout childhood, he also had a tendency to bruise easily. 
+He was tested and found to have von Willebrand disease. Later, 
+after wisdom tooth extraction, the patient experienced late 
+(e.g. [REDACTED]) bleeding despite treatment with DDAVP. The 
+patient was retested by a hematologist associated with [REDACTED] and was diagnosed 
+with hemophilia A. His FVIII activity has been checked on 
+multiple occasions, sometimes testing normal, though has been [REDACTED].  
+Upon arrival to the floor, the patient is comfortable without 
+complaint.  
+Review of Systems:  
+(+) per HPI  
+(-) fever, chills, night sweats, headache, vision changes, 
+rhinorrhea, congestion, sore throat, cough, shortness of breath, 
+chest pain, abdominal pain, nausea, vomiting, diarrhea, 
+constipation, BRBPR, melena, hematochezia, dysuria, hematuria.
+ 
+Past Medical History:
+-Factor VIII deficiency (mild)  
+
+ 
+Social History:
+Lives in [REDACTED] with his wife [REDACTED]. Works as a software developer. No tobacco use. Occasional alcohol use. No illicit drugs. Regular exercise including snowboarding and hiking.
+Family History:
+The patient's mother had tendency to bleed.  
+
+ 
+Physical Exam:
+ON ADMISSION
+VS:98 120/40 64 20 100RA  
+GENERAL: lying flat in bed, no acute distress  
+HEENT: NCAT, MMM, OP clear  
+NECK: Supple  
+CARDIAC: RRR, S1/S2, no murmurs, gallops, or rubs  
+LUNG: Generally CTA b/l  
+ABDOMEN: Soft, non-tender, non-distended  
+EXTREMITIES: Warm, well-perfused  
+PULSES: [REDACTED]+ DP pulses bilaterally  
+NEURO: CN II-XII intact  
+SKIN: Hematomas on right aspect of neck and flank 
+
+ON DISCHARGE
+Vitals: [REDACTED], [REDACTED]-[REDACTED], [REDACTED], [REDACTED], [REDACTED] on RA  
+GENERAL: lying flat in bed, no acute distress  
+HEENT: NCAT, MMM, OP clear  
+NECK: Supple  
+CARDIAC: RRR, S1/S2, no murmurs, gallops, or rubs  
+LUNG: Generally CTA b/l  
+ABDOMEN: Soft, non-tender, non-distended  
+EXTREMITIES: Warm, well-perfused  
+PULSES: [REDACTED]+ DP pulses bilaterally  
+NEURO: CN II-XII intact  
+SKIN: Hematomas on right aspect of neck and flank
+
+ 
+Pertinent Results:
+ADMISSION, DISCHARGE, PERTINENT LABS:
+
+11/29/2192 07:03PM BLOOD WBC-6.6 RBC-3.58* Hgb-10.6*# Hct-29.8*# 
+MCV-83 MCH-29.6 MCHC-35.6* RDW-14.7 Plt 147
+11/29/2192 07:03PM BLOOD Neuts-69.7 Lymphs-20.7 Monos-7.2 Eos-2.4 
+Baso-0.2
+11/29/2192 07:03PM BLOOD PT-13.2 PTT-35.2 INR-1.1
+11/29/2192 07:03PM BLOOD Plt 147
+11/29/2192 07:03PM BLOOD FacVIII-103
+11/29/2192 07:03PM BLOOD Glucose-93 UreaN-15 Creat-0.8 Na-139 
+K-4.1 Cl-101 HCO3-28 AnGap-14
+11/29/2192 11:00PM BLOOD WBC-6.6 RBC-3.30* Hgb-9.7* Hct-27.0* 
+MCV-82 MCH-29.4 MCHC-36.0* RDW-14.7 Plt 143
+11/30/2192 07:25AM BLOOD WBC-5.2 RBC-3.14* Hgb-9.3* Hct-26.2* 
+MCV-83 MCH-29.7 MCHC-35.7* RDW-14.6 Plt 145
+11/30/2192 03:25PM BLOOD WBC-6.3 RBC-3.27* Hgb-9.9* Hct-27.1* 
+MCV-83 MCH-30.3 MCHC-36.5* RDW-14.7 Plt 146
+11/29/2192 07:50PM URINE Color-Yellow Appear-Clear Sp 1.015
+11/29/2192 07:50PM URINE Blood-NEG Nitrite-NEG Protein-30 
+Glucose-NEG Ketone-NEG Bilirub-NEG Urobiln-NEG pH-6.0 Leuks-NEG
+11/29/2192 07:50PM URINE RBC-<1 WBC-1 Bacteri-FEW Yeast-NONE Epi-0
+[REDACTED] 07:50PM [REDACTED]-RARE
+
+IMAGING/STUDIES:
+ 
+11/29/2192 CT A/P
+Acute hemorrhage along right posterior flank musculature and 
+probably layering over it, only partly imaged and hard to 
+distinguish musculature from hemorrhage. No active extravasation 
+seen. Probable old hematoma along posterior left flank. 
+
+ 
+Brief Hospital Course:
+Mr. [REDACTED] is a [REDACTED] male with history of mild FVIII deficiency who 
+presents after snowboarding accident with multiple hematomas and 
+falling hemoglobin concerning for ongoing bleeding.
+
+# FACTOR VIII DEFICIENCY, MULTIPLE HEMATOMAS: Patient presented 
+after recent snowboarding accident. At [REDACTED] neck and shoulder hematomas. 
+Upon reevaluation by his PCP, the patient was found to have a 
+flank hematoma. Given falling hemoglobin, there was concern for 
+retroperitoneal bleed. CTAP in the ED demonstrated hematoma over 
+his flank musculature, but no active extravasation. He was given 
+IV DDAVP, but FVIII activity was [REDACTED] (wnl). CBC remained stable 
+and patient declined further inpatient monitoring. Atrius 
+hematology recommended continued outpatient hemoglobin 
+monitoring, but did not think further DDAVP was indicated given 
+normal FVIII level. 
+  
+
+# TRANISTIONAL ISSUES:
+- PCP Dr. [REDACTED]
+- CBC [REDACTED] at [REDACTED]
+- Caution to avoid dangerous activity
+- Code: presumed full  
+- Emergency Contact: [REDACTED] (617-555-0145 - wife) 
+ 
+Medications on Admission:
+The Preadmission Medication list is accurate and complete.
+[REDACTED]. Desmopressin Nasal [REDACTED] NAS PRN bleeding 
+
+ 
+Discharge Medications:
+1. Acetaminophen [REDACTED] PO Q8H pain 
+2. [REDACTED] NAS PRN bleeding 
+[REDACTED]. Outpatient Lab Work
+CBC on [REDACTED] or [REDACTED]. Last hemoglobin [REDACTED] on [REDACTED].
+
+ 
+Discharge Disposition:
+Home
+ 
+Discharge Diagnosis:
+PRIMARY:
+- Acute muscular hematoma, right flank
+- Hemophilia, factor VIII deficiency
+
+ 
+Discharge Condition:
+Mental Status: Clear and coherent.
+Level of Consciousness: Alert and interactive.
+Activity Status: Ambulatory - Independent.
+
+ 
+Discharge Instructions:
+Mr. [REDACTED],
+
+It was our pleasure caring for you at [REDACTED]Hospital. You were admitted with bruising on your right 
+side and low blood counts after a snowboarding fall. With your 
+history of hemophilia, it was important to evaluate internal 
+bleeding which did show a right muscular flank blood collection. 
+Your facotr VIII level was [REDACTED] and you received IV DDAVP under 
+our care. Your blood counts were stable to improved on [REDACTED] 
+of admission. 
+
+It is important that you not participate in any dangerous 
+activities given your recent bleed and your hemophilia. Bleeding 
+in hemophiliacs has more potential to be life-threatening.
+
+Please get your blood counts checked at [REDACTED] site on either 
+[REDACTED] or [REDACTED]. Follow up with your 
+regular doctor [REDACTED].
+
+Best wishes,
+Your [REDACTED]
+ 
+Followup Instructions:
+[REDACTED]. Follow up with Dr. [REDACTED] (PCP) in [REDACTED]. Get CBC at [REDACTED] on [REDACTED] or [REDACTED]. Follow up with Dr. [REDACTED] (Hematology) in [REDACTED]. Call [REDACTED]0189 if any concerns
+"
+10000560-DS-15,10000560,28979390,DS,15,2189-10-17 00:00:00,2189-10-17 13:47:00," 
+Name:  [REDACTED]                     Unit No:   MRN-7592841
+ 
+Admission Date:  10/16/2189              Discharge Date:   [REDACTED]
+ 
+Date of Birth[REDACTED]Sex:   F
+ 
+Service: UROLOGY
+ 
+Allergies: 
+Patient recorded as having No Known Allergies to Drugs
+ 
+Attending: Dr. [REDACTED], MD.
+ 
+Chief Complaint:
+renal mass
+ 
+Major Surgical or Invasive Procedure:
+right laparascopic radical nephrectomy- Dr. [REDACTED], Dr. 
+[REDACTED] 10/16/2189
+
+ 
+History of Present Illness:
+[REDACTED] healthy female with incidental finding of right renal 
+mass suspicious for RCC following MRI on [REDACTED]. 
+ 
+Past Medical History:
+PMH: nonspecific right axis deviation  
+
+PSH- cesarean section
+
+ALL-NKDA
+ 
+Social History:
+Lives in [REDACTED] with her spouse and [REDACTED] children. Works as a software engineer. Never smoker. No alcohol use. No illicit drugs. Exercises regularly with yoga and swimming.
+Family History:
+no history of RCC
+ 
+Pertinent Results:
+10/17/2189 07:15AM BLOOD WBC-7.6 RBC-3.82* Hgb-11.9* Hct-33.8* 
+MCV-89 MCH-31.2 MCHC-35.2* RDW-12.8 Plt 245
+10/17/2189 07:15AM BLOOD Glucose-150* UreaN-10 Creat-0.9 Na-138 
+K-3.8 Cl-104 HCO3-27 AnGap-11
+ 
+Brief Hospital Course:
+Patient was admitted to Urology after undergoing laparoscopic 
+right radical nephrectomy. No concerning intraoperative events 
+occurred; please see dictated operative note for details. The 
+patient received perioperative antibiotic prophylaxis. The 
+patient was transferred to the floor from the PACU in stable 
+condition.  On POD0, pain was well controlled on PCA, hydrated 
+for urine output [REDACTED], provided with pneumoboots and 
+incentive spirometry for prophylaxis, and ambulated once. On 
+POD1,foley was removed without difficulty, basic metabolic panel 
+and complete blood count were checked, pain control was 
+transitioned from PCA to oral analgesics, diet was advanced to a 
+clears/toast and crackers diet. On POD2, diet was advanced as 
+tolerated. The remainder of the hospital course was relatively 
+unremarkable. The patient was discharged in stable condition, 
+eating well, ambulating independently, voiding without 
+difficulty, and with pain control on oral analgesics. On exam, 
+incision was clean, dry, and intact, with no evidence of 
+hematoma collection or infection. The patient was given explicit 
+instructions to follow-up in clinic with Dr. [REDACTED] in [REDACTED].
+
+ 
+Medications on Admission:
+none
+ 
+Discharge Medications:
+1. Hydrocodone-Acetaminophen [REDACTED] Tablet Sig: [REDACTED]-2 Tablets PO 
+Q6H ([REDACTED]) as needed for break through pain only (score 
+>[REDACTED]) .
+Disp:*60 Tablet(s)* Refills:*0*
+[REDACTED]. Docusate Sodium [REDACTED] Capsule Sig: [REDACTED] ([REDACTED]) Capsule PO BID ([REDACTED] 
+times a day).
+Disp:*60 Capsule(s)* Refills:*2*
+
+ 
+Discharge Disposition:
+Home
+ 
+Discharge Diagnosis:
+renal cell carcinoma
+
+ 
+Discharge Condition:
+stable
+
+ 
+Discharge Instructions:
+-You may shower but do not bathe, swim or immerse your incision.
+
+-Do not eat constipating foods for [REDACTED], drink plenty of 
+fluids
+
+-Do not lift anything heavier than a phone book ([REDACTED]) or 
+drive until you are seen by your Urologist in follow-up
+
+-Tylenol should be used as your [REDACTED] line pain medication. If 
+your pain is not well controlled on [REDACTED] you have been 
+prescribed a narcotic pain medication. Use in place of [REDACTED]. 
+Do not exceed [REDACTED] of [REDACTED] in total daily
+
+-Do not drive or drink alcohol while taking narcotics
+
+-Resume all of your home medications, except hold NSAID 
+(aspirin, advil, motrin, ibuprofen) until you see your urologist 
+in follow-up
+
+-If you have fevers > 101.5 F, vomiting, or increased redness, 
+swelling, or discharge from your incision, call your doctor or 
+go to the nearest ER
+
+-Call Dr. [REDACTED] to set up follow-up appointment and if 
+you have any urological questions. 617-555-0178
+
+ 
+Followup Instructions:
+[REDACTED]. Follow up with Dr. [REDACTED] (Urology) in [REDACTED] - call 617-555-0178
+[REDACTED]. Get CBC and basic metabolic panel before follow-up appointment
+[REDACTED]. Call if any concerns or questions
+"
+10000764-DS-11,10000764,27897940,DS,11,2132-10-19 00:00:00,2132-10-19 18:50:00," 
+Name:  [REDACTED]               Unit No:   MRN-3856192
+ 
+Admission Date:  [REDACTED]              Discharge Date:   [REDACTED]
+ 
+Date of Birth[REDACTED]Sex:   M
+ 
+Service: MEDICINE
+ 
+Allergies: 
+No Known Allergies / Adverse Drug Reactions
+ 
+Attending: Dr. [REDACTED], MD
+ 
+Chief Complaint:
+Epistaxis
+ 
+Major Surgical or Invasive Procedure:
+None
+
+ 
+History of Present Illness:
+Mr. [REDACTED] is a [REDACTED] male with history of AAA s/p repair 
+complicated by MI, hypertension, and hyperlipidemia who presents 
+upon transfer from outside hospital with nasal fractures and 
+epistaxis secondary to fall. The patient reports that he was at 
+[REDACTED]. While coughing, he tripped 
+on the curb and suffered trauma to his face. He had no loss of 
+consciousness. However, he had a persistent nosebleed and 
+appeared to have some trauma to his face, thus was transferred 
+to [REDACTED] for further care. There, a CT scan of 
+the head, neck, and face were remarkable for a nasal bone and 
+septal fracture. Given persistent epistaxis, bilateral 
+RhinoRockets were placed. He had a small abrasion to the bridge 
+of his nose which was not closed. Bleeding was well controlled. 
+While in the OSH ED, he had an episode of nausea and coughed up 
+some blood. At that time, he began to feel lightheaded and was 
+noted to be hypotensive and bradycardic. Per report, he had a 
+brief loss of consciousness, though quickly returned to his 
+baseline. His family noted that his eyes rolled back into his 
+head. The patient recalls the event and denies post-event 
+confusion. He had no further episodes of syncope or hemodynamic 
+changes.  Given the syncopal event and epistaxis, the patient 
+was transferred for further care.
+
+In the ED, initial vital signs [REDACTED] notable for WBC [REDACTED] (91%N), H/H [REDACTED], plt [REDACTED], BUN/Cr 
+[REDACTED]. HCTs were repeated which were stable. A urinalysis was 
+negative. A CXR demonstrated a focal consolidation at the left 
+lung base, possibly representing aspiration or developing 
+pneumonia. The patient was given Tdap, amoxicillin-clavulanate 
+for antibiotic prophylaxis, ondansetron, 500cc NS, and 
+metoprolol tartrate [REDACTED]. Clopidogrel was held.
+ 
+Past Medical History:
+MI after AAA repair when he was [REDACTED]/o
+HTN
+Hypercholesterolemia
+ 
+Social History:
+Lives in [REDACTED] with his wife. Retired postal worker. Former smoker, quit [REDACTED]. No alcohol use. No illicit drugs. Walks [REDACTED] for exercise.
+Family History:
+Patient is unaware of a family history of bleeding diathesis.
+
+ 
+Physical Exam:
+ADMISSION:
+VS: 98.5 142/65 95 18 98RA
+GENERAL: Alert, oriented, no acute distress  
+HEENT: Sclerae anicteric, MMM, oropharynx clear, bruising under 
+both eyes, swollen nose with mild tenderness, RhinoRockets in 
+place  
+NECK: Supple, without LAD  
+RESP: Generally CTA bilaterally  
+CV: RRR, (+)S1/S2 no m/r/g  
+ABD: Soft, non-tender, non-distended
+GU: Deferred 
+EXT: Warm, well perfused, [REDACTED]+ pulses, no clubbing, cyanosis or 
+edema  
+NEURO: CN II-XII grossly intact, motor function grossly normal
+SKIN: No excoriations or rash.
+
+DISCHARGE:
+VS: 98.4 125/55 73 18 94RA
+GENERAL: Alert, oriented, no acute distress  
+HEENT: Sclerae anicteric, MMM, oropharynx clear, bruising under 
+both eyes, swollen nose with mild tenderness, RhinoRockets in 
+place  
+NECK: Supple, without LAD  
+RESP: Generally CTA bilaterally  
+CV: RRR, (+)S1/S2 no m/r/g  
+ABD: Soft, non-tender, non-distended
+GU: Deferred 
+EXT: Warm, well perfused, [REDACTED]+ pulses, no clubbing, cyanosis or 
+edema  
+NEURO: CN II-XII grossly intact, motor function grossly normal
+SKIN: No excoriations or rash.
+ 
+Pertinent Results:
+ADMISSION:
+10/18/2132 08:15PM BLOOD WBC-11.3* RBC-4.30* Hgb-14.1 Hct-40.2 
+MCV-93 MCH-32.8* MCHC-35.1* RDW-12.8 Plt 147
+10/18/2132 08:15PM BLOOD Neuts-91.1* Lymphs-4.7* Monos-3.8 Eos-0.3 
+Baso-0.1
+10/18/2132 08:15PM BLOOD PT-13.2 PTT-26.8 INR-1.1
+10/18/2132 08:15PM BLOOD Glucose-159* UreaN-36* Creat-1.5* Na-141 
+K-4.1 Cl-106 HCO3-21* AnGap-18
+10/19/2132 06:03AM BLOOD CK(CPK)-594*
+
+CARDIAC MARKER TREND:
+10/18/2132 07:45AM BLOOD cTropnT-0.04*
+10/18/2132 06:03AM BLOOD CK-MB-36* MB Indx-6.1* cTropnT-0.57*
+10/18/2132 03:03PM BLOOD CK-MB-23* MB Indx-4.2 cTropnT-0.89*
+10/19/2132 05:59AM BLOOD CK-MB-8 cTropnT-1.28*
+10/19/2132 01:16PM BLOOD CK-MB-5 cTropnT-1.29*
+10/19/2132 06:10AM BLOOD CK-MB-4 cTropnT-1.48*
+10/19/2132 07:28AM BLOOD CK-MB-2 cTropnT-1.50*
+
+DISCHARGE LABS:
+10/19/2132 07:28AM BLOOD WBC-4.2 RBC-3.85* Hgb-12.5* Hct-36.0* 
+MCV-94 MCH-32.5* MCHC-34.7 RDW-12.9 Plt 156
+10/19/2132 07:28AM BLOOD Glucose-104* UreaN-30* Creat-1.6* Na-142 
+K-4.3 Cl-106 HCO3-26 AnGap-14
+
+IMAGING:
+10/18/2132 CXR
+PA and lateral views of the chest provided. The lungs are 
+adequately 
+aerated. There is a focal consolidation at the left lung base 
+adjacent to the lateral hemidiaphragm. There is mild vascular 
+engorgement. There is bilateral apical pleural thickening. The 
+cardiomediastinal silhouette is remarkable for aortic arch 
+calcifications. The heart is top normal in size. 
+
+10/19/2132 ECHO
+The left atrium is mildly dilated. Left ventricular wall 
+thicknesses and cavity size are normal. There is mild regional 
+left ventricular systolic dysfunction with focal apical 
+hypokinesis. The remaining segments contract normally (LVEF = [REDACTED]%). No masses or thrombi are seen in the left ventricle. Right 
+ventricular chamber size and free wall motion are normal. There 
+are [REDACTED] aortic valve leaflets. There is mild aortic valve 
+stenosis (valve area [REDACTED]). Mild ([REDACTED]+) aortic regurgitation is 
+seen. The mitral valve leaflets are mildly thickened. Trivial 
+mitral regurgitation is seen. The pulmonary artery systolic 
+pressure could not be determined. There is a trivial/physiologic 
+pericardial effusion. 
+
+IMPRESSION: Normal left ventricular cavity size with mild 
+regional systolic dysfunction most c/w CAD (distal LAD 
+distribution). Mild aortic valve stenosis. Mild aortic 
+regurgitation. 
+ 
+Brief Hospital Course:
+Mr. [REDACTED] is a [REDACTED] male with history of AAA s/p repair 
+complicated by MI, hypertension, and hyperlipidemia who 
+presented with nasal fractures and epistaxis after mechanical 
+fall with hospital course complicated by NSTEMI.
+
+#Epistaxis, nasal fractures
+Patient presenting after mechanical fall with Rhinorockets 
+placed at outside hospital for ongoing epistaxis. CT scan from 
+that hospital demonstrated nasal bone and septal fractures. The 
+Rhinorockets were maintained while inpatient and discontinued 
+prior to discharge. He was encouraged to use oxymetolazone nasal 
+spray and hold pressure should bleeding reoccur. 
+
+#NSTEMI
+Patient found to have mild elevation of troponin in the ED. This 
+was trended and eventually rose to [REDACTED], though MB component 
+downtrended during course of admission. The patient was without 
+chest pain or other cardiac symptoms. Cardiology was consulted 
+who thought that this was most likely [REDACTED] to demand 
+ischemia (type II MI) [REDACTED] to his fall. An echocardiogram 
+demonstrated aortic stenosis and likely distal LAD disease based 
+on wall motion abnormalities. The patient's metoprolol was 
+uptitrated, his pravastatin was converted to atorvastatin, his 
+clopidogrel was maintained, and he was started on aspirin.
+
+#Hypoxemia/L basilar consolidation
+Patient reported to be mildly hypoxic in the ED, though he 
+maintained normal oxygen saturations on room air. He denied 
+shortness of breath or cough, fevers, or other infectious 
+symptoms and had no leukocytosis. A CXR revealed consolidation 
+in left lung, thought to be possibly related to aspirated blood. 
+-monitor O2 saturation, temperature, trend WBC. He was convered 
+with antibiotics while inpatient as he required prophylaxis for 
+the [REDACTED], but this was discontinued upon discharge.
+
+#Acute kidney injury
+Patient presented with creatinine of [REDACTED] with last creatinine at 
+PCP [REDACTED]. Patient was unaware of a history of kidney disease. The 
+patient was discharged with a stable creatinine.
+
+#Peripheral vascular disease
+Patient had a history of AAA repair in [REDACTED] without history of 
+MI per PCP. Patient denied history of CABG or cardiac/peripheral 
+stents. A cardiac regimen was continued, as above.
+
+TRANSITIONAL ISSUES
+-Outpatient stress echo for futher evaluation distal LAD disease 
+(possibly a large myocardial territory at risk). 
+-Repeat echocardiogram in [REDACTED] to monitor mild AS/AR.
+-If epistaxis returns, can use oxymetolazone nasal spray.
+-Repeat chest x-ray in [REDACTED] to ensure resolution of the LLL 
+infiltrative process.
+-Consider follow-up with ENT or [REDACTED] for later 
+evaluation of nasal fractures.
+-Repeat CBC in [REDACTED] to ensure stability of HCT and 
+platelets.
+-Consider conversion of metoprolol tartrate to succinate for 
+ease-of-administration.
+ 
+Medications on Admission:
+The Preadmission Medication list is accurate and complete.
+[REDACTED]. Clopidogrel [REDACTED] PO DAILY 
+2. Metoprolol Tartrate [REDACTED] PO TID 
+3. Pravastatin [REDACTED] PO QPM 
+
+ 
+Discharge Medications:
+1. Clopidogrel [REDACTED] PO DAILY 
+2. Acetaminophen [REDACTED] PO Q8H:PRN pain 
+Please avoid NSAID medications like ibuprofen given your 
+bleeding. 
+3. Aspirin [REDACTED] PO DAILY Duration: [REDACTED] 
+4. Metoprolol Tartrate [REDACTED] PO TID 
+RX *metoprolol tartrate [REDACTED] tablet(s) by mouth [REDACTED] times 
+daily Disp #*[REDACTED] Tablet Refills:*0
+5. Atorvastatin [REDACTED] PO QPM 
+RX *atorvastatin [REDACTED] tablet(s) by mouth every evening Disp 
+#*[REDACTED] Tablet Refills:*0
+6. Oxymetazoline 1 SPRY NU BID:PRN nosebleed 
+This can be purchased over-the-counter, the brand name is [REDACTED]. 
+
+
+ 
+Discharge Disposition:
+Home With Service
+ 
+Facility:
+[REDACTED]
+ 
+Discharge Diagnosis:
+Nasal fracture
+Epistaxis
+NSTEMI
+
+ 
+Discharge Condition:
+Mental Status: Clear and coherent.
+Level of Consciousness: Alert and interactive.
+Activity Status: Ambulatory - Independent.
+
+ 
+Discharge Instructions:
+Mr. [REDACTED],
+You were admitted after you fell and broke your nose. You had 
+nose bleeds that were difficult to control, thus plugs were 
+placed in your nose to stop the bleeding. During your hospital 
+course, you were found to have high troponins, a blood test for 
+the heart. A ultrasound of your heart was performed. You should 
+follow-up with your PCP to discuss stress test.
+
+It was a pleasure participating in your care, thank you for 
+choosing [REDACTED].
+
+Followup Instructions:
+[REDACTED]. Follow up with Dr. [REDACTED] (PCP) in [REDACTED] - call 617-555-0123
+2. Schedule stress echo with Cardiology - call 617-555-0145
+3. Get repeat chest x-ray in [REDACTED] at [REDACTED]. Get CBC in [REDACTED] at [REDACTED]. Consider ENT follow-up for nasal fractures - call 617-555-0167
+"

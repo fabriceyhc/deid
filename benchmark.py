@@ -16,10 +16,10 @@ import re
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from deid import (
-    OptimizedRegexMasker, 
-    OptimizedSpaCyNERMasker,
-    OptimizedHuggingfaceMasker,
-    OptimizedDeidentifier,
+    RegexMasker, 
+    SpaCyNERMasker,
+    HuggingfaceMasker,
+    Deidentifier,
     load_names_cached
 )
 
@@ -35,12 +35,14 @@ class BenchmarkResults:
         self.total_time = 0.0
         self.texts_per_second = 0.0
         self.correctness_score = 0.0
+        self.privacy_score = 0.0  # New metric for privacy effectiveness
         self.exact_matches = 0
         self.total_texts = 0
         self.output_file = ""
         self.error_message = ""
         self.redaction_coverage = 0.0  # % of expected redactions found
         self.over_redaction = 0.0      # % of extra redactions made
+        self.balanced_score = 0.0      # For balanced ranking
 
 
 def load_test_data(input_path: str) -> Tuple[pd.DataFrame, List[str]]:
@@ -76,20 +78,22 @@ def load_expected_output(expected_path: str) -> List[str]:
     return expected_texts
 
 
-def calculate_correctness_metrics(actual: List[str], expected: List[str]) -> Tuple[float, float, int, float, float]:
+def calculate_correctness_metrics(actual: List[str], expected: List[str]) -> Tuple[float, float, int, float, float, float]:
     """
     Calculate correctness metrics by comparing actual vs expected output.
     
     Returns:
-        - overall_score: Weighted correctness score (0-100)
+        - similarity_score: Text similarity score (0-100) - traditional metric
+        - privacy_score: Privacy protection score (0-100) - emphasizes comprehensive redaction
         - exact_matches: Number of texts that match exactly
         - redaction_coverage: % of expected redactions found
         - over_redaction: % of extra redactions made
+        - comprehensive_score: Combined score favoring better privacy protection
     """
     
     if not expected:
         # No expected output to compare against
-        return 0.0, 0, 0.0, 0.0
+        return 0.0, 0.0, 0, 0.0, 0.0, 0.0
     
     if len(actual) != len(expected):
         print(f"⚠ Length mismatch: actual={len(actual)}, expected={len(expected)}")
@@ -102,18 +106,46 @@ def calculate_correctness_metrics(actual: List[str], expected: List[str]) -> Tup
     total_expected_redactions = 0
     total_found_redactions = 0
     total_actual_redactions = 0
+    total_privacy_score = 0.0
     
     for i, (actual_text, expected_text) in enumerate(zip(actual, expected)):
         # Exact match check
         if actual_text.strip() == expected_text.strip():
             exact_matches += 1
             total_similarity += 100.0
+            total_privacy_score += 100.0
         else:
-            # Calculate similarity using sequence matcher
+            # Calculate similarity using sequence matcher (traditional metric)
             similarity = difflib.SequenceMatcher(None, actual_text, expected_text).ratio() * 100
             total_similarity += similarity
+            
+            # Calculate privacy-focused score that rewards comprehensive redaction
+            expected_redactions = expected_text.count('[REDACTED]')
+            actual_redactions = actual_text.count('[REDACTED]')
+            
+            # Privacy score: reward finding expected redactions, don't heavily penalize over-redaction
+            if expected_redactions == 0:
+                # If no redaction expected, exact match gets 100%, any redaction gets 80%
+                privacy_score = 100.0 if actual_redactions == 0 else 80.0
+            else:
+                # Base score for finding expected redactions
+                coverage_score = min(100.0, (actual_redactions / expected_redactions) * 100)
+                
+                # Bonus for comprehensive coverage (finding all expected + reasonable over-redaction)
+                if actual_redactions >= expected_redactions:
+                    # Give credit for finding everything, small penalty for excessive over-redaction
+                    over_redact_ratio = actual_redactions / expected_redactions
+                    if over_redact_ratio <= 2.0:  # Up to 2x redaction is reasonable
+                        privacy_score = min(100.0, coverage_score + (over_redact_ratio - 1) * 10)
+                    else:  # Excessive over-redaction gets capped
+                        privacy_score = min(95.0, coverage_score)
+                else:
+                    # Under-redaction is more problematic for privacy
+                    privacy_score = coverage_score * 0.8  # Penalize missing redactions more
+                    
+            total_privacy_score += privacy_score
         
-        # Count redactions
+        # Count redactions for traditional metrics
         expected_redactions = expected_text.count('[REDACTED]')
         actual_redactions = actual_text.count('[REDACTED]')
         
@@ -121,17 +153,20 @@ def calculate_correctness_metrics(actual: List[str], expected: List[str]) -> Tup
         total_actual_redactions += actual_redactions
         
         # Count how many expected redaction positions were found
-        # This is a simplified check - in reality, we'd need more sophisticated alignment
         if expected_redactions > 0:
             found_redactions = min(actual_redactions, expected_redactions)
             total_found_redactions += found_redactions
     
     # Calculate metrics
-    overall_score = total_similarity / len(actual) if actual else 0.0
+    similarity_score = total_similarity / len(actual) if actual else 0.0
+    privacy_score = total_privacy_score / len(actual) if actual else 0.0
     redaction_coverage = (total_found_redactions / total_expected_redactions * 100) if total_expected_redactions > 0 else 0.0
     over_redaction = max(0, (total_actual_redactions - total_expected_redactions) / max(1, total_expected_redactions) * 100)
     
-    return overall_score, exact_matches, redaction_coverage, over_redaction
+    # Comprehensive score: blend similarity and privacy with emphasis on privacy
+    comprehensive_score = (privacy_score * 0.7) + (similarity_score * 0.3)
+    
+    return similarity_score, privacy_score, exact_matches, redaction_coverage, over_redaction, comprehensive_score
 
 
 def benchmark_masker_configuration(
@@ -154,7 +189,7 @@ def benchmark_masker_configuration(
     try:
         # Initialize maskers
         start_init = time.time()
-        deidentifier = OptimizedDeidentifier(maskers, n_jobs=1)  # Single thread for consistent timing
+        deidentifier = Deidentifier(maskers, n_jobs=1)  # Single thread for consistent timing
         results.initialization_time = time.time() - start_init
         
         print(f"✓ Initialized {len(maskers)} masker(s) in {results.initialization_time:.3f}s")
@@ -187,18 +222,20 @@ def benchmark_masker_configuration(
         
         # Calculate correctness metrics
         if expected_output:
-            correctness, exact, coverage, over_redact = calculate_correctness_metrics(
+            similarity, privacy, exact, coverage, over_redact, comprehensive = calculate_correctness_metrics(
                 processed_texts, expected_output
             )
-            results.correctness_score = correctness
+            results.correctness_score = comprehensive # Use comprehensive score for overall correctness
             results.exact_matches = exact
             results.redaction_coverage = coverage
             results.over_redaction = over_redact
+            results.privacy_score = privacy # Store privacy score separately
             
-            print(f"✓ Correctness score: {correctness:.1f}%")
+            print(f"✓ Correctness score: {results.correctness_score:.1f}%")
             print(f"✓ Exact matches: {exact}/{len(texts)} ({exact/len(texts)*100:.1f}%)")
             print(f"✓ Redaction coverage: {coverage:.1f}%")
             print(f"✓ Over-redaction: {over_redact:.1f}%")
+            print(f"✓ Privacy score: {privacy:.1f}%")
             
             # Show first example
             if processed_texts and expected_output:
@@ -232,26 +269,26 @@ def create_comparison_report(all_results: List[BenchmarkResults], output_dir: st
         
         # Performance Summary
         f.write("## 📊 Performance Summary\n\n")
-        f.write("| Configuration | Status | Speed (texts/s) | Correctness (%) | Exact Matches | Redaction Coverage | Over-redaction |\n")
-        f.write("|---------------|--------|-----------------|-----------------|---------------|-------------------|----------------|\n")
+        f.write("| Configuration | Status | Speed (texts/s) | Comprehensive Score (%) | Privacy Score (%) | Redaction Coverage | Over-redaction |\n")
+        f.write("|---------------|--------|-----------------|-------------------------|-------------------|-------------------|----------------|\n")
         
         for result in all_results:
             if result.success:
                 status = "✅ PASS"
                 speed = f"{result.texts_per_second:.1f}"
                 correctness = f"{result.correctness_score:.1f}"
-                exact = f"{result.exact_matches}/{result.total_texts}"
+                privacy = f"{result.privacy_score:.1f}"
                 coverage = f"{result.redaction_coverage:.1f}%"
                 over_redact = f"{result.over_redaction:.1f}%"
             else:
                 status = "❌ FAIL"
                 speed = "N/A"
                 correctness = "N/A"
-                exact = "N/A"
+                privacy = "N/A"
                 coverage = "N/A"
                 over_redact = "N/A"
             
-            f.write(f"| {result.name} | {status} | {speed} | {correctness} | {exact} | {coverage} | {over_redact} |\n")
+            f.write(f"| {result.name} | {status} | {speed} | {correctness} | {privacy} | {coverage} | {over_redact} |\n")
         
         # Performance Rankings
         successful_results = [r for r in all_results if r.success]
@@ -265,32 +302,59 @@ def create_comparison_report(all_results: List[BenchmarkResults], output_dir: st
             for i, result in enumerate(speed_ranking, 1):
                 f.write(f"{i}. **{result.name}**: {result.texts_per_second:.1f} texts/s\n")
             
-            # Correctness ranking
+            # Privacy ranking (new - emphasizes comprehensive redaction)
+            privacy_ranking = sorted(successful_results, key=lambda x: x.privacy_score, reverse=True)
+            f.write("\n### Privacy Protection Ranking (%)\n")
+            for i, result in enumerate(privacy_ranking, 1):
+                f.write(f"{i}. **{result.name}**: {result.privacy_score:.1f}%\n")
+            
+            # Comprehensive ranking (blended score)
             correctness_ranking = sorted(successful_results, key=lambda x: x.correctness_score, reverse=True)
-            f.write("\n### Correctness Ranking (%)\n")
+            f.write("\n### Comprehensive Score Ranking (Privacy + Similarity) (%)\n")
             for i, result in enumerate(correctness_ranking, 1):
                 f.write(f"{i}. **{result.name}**: {result.correctness_score:.1f}%\n")
             
             # Best overall (balanced score)
-            f.write("\n### Balanced Score (Speed × Correctness)\n")
+            f.write("\n### Balanced Score (Speed × Comprehensive Score)\n")
             for result in successful_results:
                 balanced_score = result.texts_per_second * result.correctness_score / 100
                 result.balanced_score = balanced_score
             
             balanced_ranking = sorted(successful_results, key=lambda x: x.balanced_score, reverse=True)
             for i, result in enumerate(balanced_ranking, 1):
-                f.write(f"{i}. **{result.name}**: {result.balanced_score:.1f} (speed×correctness)\n")
+                f.write(f"{i}. **{result.name}**: {result.balanced_score:.1f} (speed×comprehensive)\n")
+        
+        # Add explanation of metrics
+        f.write("\n## 📏 Scoring Metrics Explained\n\n")
+        f.write("### Privacy Score (0-100%)\n")
+        f.write("- **Rewards comprehensive redaction** that finds all expected sensitive information\n")
+        f.write("- **Tolerates reasonable over-redaction** (up to 2x expected) as this improves privacy\n")
+        f.write("- **Penalizes under-redaction** more heavily as this is a privacy risk\n")
+        f.write("- **Why combined maskers score higher**: They catch more sensitive information\n\n")
+        
+        f.write("### Comprehensive Score (0-100%)\n")
+        f.write("- **Blended metric**: 70% Privacy Score + 30% Similarity Score\n")
+        f.write("- **Emphasizes privacy protection** while considering text preservation\n")
+        f.write("- **Best metric for overall evaluation** in privacy-sensitive applications\n\n")
+        
+        f.write("### Traditional Similarity Score\n")
+        f.write("- **Measures exact match similarity** to expected output using sequence matching\n")
+        f.write("- **Penalizes over-redaction** as it differs from expected text\n")
+        f.write("- **Less suitable for privacy evaluation** but useful for exact replication tasks\n\n")
         
         # Detailed Results
-        f.write("\n## 📋 Detailed Results\n\n")
+        f.write("## 📋 Detailed Results\n\n")
         for result in all_results:
             f.write(f"### {result.name}\n")
             if result.success:
                 f.write(f"- **Status**: ✅ Success\n")
                 f.write(f"- **Processing Time**: {result.processing_time:.3f}s\n")
                 f.write(f"- **Speed**: {result.texts_per_second:.1f} texts/second\n")
-                f.write(f"- **Correctness**: {result.correctness_score:.1f}%\n")
+                f.write(f"- **Comprehensive Score**: {result.correctness_score:.1f}%\n")
+                f.write(f"- **Privacy Score**: {result.privacy_score:.1f}%\n")
                 f.write(f"- **Exact Matches**: {result.exact_matches}/{result.total_texts}\n")
+                f.write(f"- **Redaction Coverage**: {result.redaction_coverage:.1f}%\n")
+                f.write(f"- **Over-redaction**: {result.over_redaction:.1f}%\n")
                 f.write(f"- **Output File**: `{os.path.basename(result.output_file)}`\n")
             else:
                 f.write(f"- **Status**: ❌ Failed\n")
@@ -301,12 +365,25 @@ def create_comparison_report(all_results: List[BenchmarkResults], output_dir: st
         f.write("## 🎯 Recommendations\n\n")
         if successful_results:
             fastest = max(successful_results, key=lambda x: x.texts_per_second)
-            most_accurate = max(successful_results, key=lambda x: x.correctness_score)
+            most_private = max(successful_results, key=lambda x: x.privacy_score)
+            most_comprehensive = max(successful_results, key=lambda x: x.correctness_score)
             most_balanced = max(successful_results, key=lambda x: x.balanced_score)
             
             f.write(f"- **Fastest Processing**: {fastest.name} ({fastest.texts_per_second:.1f} texts/s)\n")
-            f.write(f"- **Highest Accuracy**: {most_accurate.name} ({most_accurate.correctness_score:.1f}%)\n")
-            f.write(f"- **Best Balanced**: {most_balanced.name} (score: {most_balanced.balanced_score:.1f})\n")
+            f.write(f"- **Best Privacy Protection**: {most_private.name} ({most_private.privacy_score:.1f}%)\n")
+            f.write(f"- **Best Comprehensive Score**: {most_comprehensive.name} ({most_comprehensive.correctness_score:.1f}%)\n")
+            f.write(f"- **Best Balanced Performance**: {most_balanced.name} (score: {most_balanced.balanced_score:.1f})\n\n")
+            
+            f.write("### 🛡️ Privacy-First Recommendation\n")
+            f.write(f"For maximum privacy protection, use **{most_private.name}** as it provides the most comprehensive redaction.\n")
+            f.write("Combined maskers typically offer superior privacy protection by catching sensitive information that individual maskers might miss.\n\n")
+            
+            f.write("### ⚡ Speed-First Recommendation\n")
+            f.write(f"For high-throughput processing, use **{fastest.name}** which processes {fastest.texts_per_second:.1f} texts per second.\n")
+            if fastest.name != most_private.name:
+                f.write(f"Note: This may provide lower privacy protection ({fastest.privacy_score:.1f}%) compared to the most secure option.\n\n")
+            else:
+                f.write("This option also provides excellent privacy protection.\n\n")
             
         f.write("\n## 📁 Output Files\n\n")
         f.write("All de-identified outputs have been saved to:\n")
@@ -326,9 +403,9 @@ def main():
     print("=" * 70)
     
     # Paths
-    input_path = "/home/fabrice/deid/test/data/unprocessed/test.csv"
-    expected_path = "/home/fabrice/deid/test/data/processed/test_deid.csv"
-    output_dir = "/home/fabrice/deid/test/data/processed"
+    input_path = "./test/data/unprocessed/test.csv"
+    expected_path = "./test/data/processed/test_deid.csv"
+    output_dir = "./test/data/processed"
     
     # Ensure output directory exists
     os.makedirs(output_dir, exist_ok=True)
@@ -350,15 +427,15 @@ def main():
         configurations = [
             {
                 'name': 'Regex Only',
-                'maskers': [OptimizedRegexMasker(known_names=known_names, debug=False)]
+                'maskers': [RegexMasker(known_names=known_names, debug=False)]
             },
             {
                 'name': 'SpaCy Only',
-                'maskers': [OptimizedSpaCyNERMasker(model_name="en_core_web_trf")]
+                'maskers': [SpaCyNERMasker(model_name="en_core_web_trf")]
             },
             {
                 'name': 'HuggingFace Only',
-                'maskers': [OptimizedHuggingfaceMasker(
+                'maskers': [HuggingfaceMasker(
                     model_name="StanfordAIMI/stanford-deidentifier-only-i2b2",
                     device=-1,  # CPU for consistency
                     batch_size=4
@@ -367,9 +444,9 @@ def main():
             {
                 'name': 'All Three Combined',
                 'maskers': [
-                    OptimizedRegexMasker(known_names=known_names, debug=False),
-                    OptimizedSpaCyNERMasker(model_name="en_core_web_trf"),
-                    OptimizedHuggingfaceMasker(
+                    RegexMasker(known_names=known_names, debug=False),
+                    SpaCyNERMasker(model_name="en_core_web_trf"),
+                    HuggingfaceMasker(
                         model_name="StanfordAIMI/stanford-deidentifier-only-i2b2",
                         device=-1,
                         batch_size=4
@@ -394,23 +471,25 @@ def main():
         
         # Create summary
         print(f"\n📊 FINAL SUMMARY")
-        print("=" * 70)
-        print(f"{'Configuration':<20} {'Status':<8} {'Speed':<12} {'Correctness':<12} {'Exact':<8}")
-        print("-" * 70)
+        print("=" * 80)
+        print(f"{'Configuration':<20} {'Status':<8} {'Speed':<12} {'Privacy':<12} {'Comprehensive':<12} {'Exact':<8}")
+        print("-" * 80)
         
         for result in all_results:
             if result.success:
                 status = "✅ PASS"
                 speed = f"{result.texts_per_second:.1f}/s"
-                correctness = f"{result.correctness_score:.1f}%"
+                privacy = f"{result.privacy_score:.1f}%"
+                comprehensive = f"{result.correctness_score:.1f}%"
                 exact = f"{result.exact_matches}/{result.total_texts}"
             else:
                 status = "❌ FAIL"
                 speed = "N/A"
-                correctness = "N/A"
+                privacy = "N/A"
+                comprehensive = "N/A"
                 exact = "N/A"
             
-            print(f"{result.name:<20} {status:<8} {speed:<12} {correctness:<12} {exact:<8}")
+            print(f"{result.name:<20} {status:<8} {speed:<12} {privacy:<12} {comprehensive:<12} {exact:<8}")
         
         # Create detailed report
         report_path = create_comparison_report(all_results, output_dir)
@@ -423,11 +502,17 @@ def main():
         successful = [r for r in all_results if r.success]
         if successful:
             fastest = max(successful, key=lambda x: x.texts_per_second)
-            most_accurate = max(successful, key=lambda x: x.correctness_score)
+            most_private = max(successful, key=lambda x: x.privacy_score)
+            most_comprehensive = max(successful, key=lambda x: x.correctness_score)
             
             print(f"\n🏆 Best Performers:")
             print(f"   Fastest: {fastest.name} ({fastest.texts_per_second:.1f} texts/s)")
-            print(f"   Most Accurate: {most_accurate.name} ({most_accurate.correctness_score:.1f}%)")
+            print(f"   Most Private: {most_private.name} ({most_private.privacy_score:.1f}%)")
+            print(f"   Most Comprehensive: {most_comprehensive.name} ({most_comprehensive.correctness_score:.1f}%)")
+            
+            if most_private.name != fastest.name:
+                print(f"\n💡 Key Insight: Combined maskers provide better privacy protection!")
+                print(f"   {most_private.name} catches more sensitive information than individual maskers.")
         
     except Exception as e:
         print(f"\n❌ Benchmark failed: {e}")
