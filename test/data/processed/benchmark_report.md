@@ -1,120 +1,115 @@
 # De-identification Benchmark Report
 
-Generated on: 2025-07-11 11:15:52
+Generated on: 2025-07-11 17:52:11
 
 ## 📊 Performance Summary
 
-| Configuration | Status | Speed (texts/s) | Comprehensive Score (%) | Privacy Score (%) | Redaction Coverage | Over-redaction |
-|---------------|--------|-----------------|-------------------------|-------------------|-------------------|----------------|
-| Regex Only | ✅ PASS | 16.7 | 94.9 | 97.2 | 99.5% | 13.3% |
-| SpaCy Only | ✅ PASS | 0.1 | 88.0 | 95.6 | 100.0% | 186.7% |
-| HuggingFace Only | ✅ PASS | 1.0 | 57.6 | 41.2 | 38.1% | 0.0% |
-| All Three Combined | ✅ PASS | 0.1 | 88.4 | 95.0 | 100.0% | 245.7% |
+| Configuration | Status | Speed (texts/s) | Accuracy (%) | F1 Score (%) | Over-redaction Ratio | Exact Matches |
+|---------------|--------|-----------------|--------------|--------------|---------------------|---------------|
+| Regex Only | ✅ PASS | 111.7 | 99.5 | 92.6 | 1.15x | 0/8 |
+| SpaCy Only | ✅ PASS | 0.2 | 100.0 | 51.2 | 2.91x | 0/8 |
+| HuggingFace Only | ✅ PASS | 1.2 | 38.6 | 55.4 | 1.0x | 0/8 |
+| All Three Combined | ✅ PASS | 0.2 | 100.0 | 44.4 | 3.51x | 0/8 |
 
 ## 🏆 Performance Rankings
 
 ### Speed Ranking (texts/second)
-1. **Regex Only**: 16.7 texts/s
-2. **HuggingFace Only**: 1.0 texts/s
-3. **All Three Combined**: 0.1 texts/s
-4. **SpaCy Only**: 0.1 texts/s
+1. **Regex Only**: 111.7 texts/s
+2. **HuggingFace Only**: 1.2 texts/s
+3. **SpaCy Only**: 0.2 texts/s
+4. **All Three Combined**: 0.2 texts/s
 
-### Privacy Protection Ranking (%)
-1. **Regex Only**: 97.2%
-2. **SpaCy Only**: 95.6%
-3. **All Three Combined**: 95.0%
-4. **HuggingFace Only**: 41.2%
+### Accuracy Ranking (% of expected redactions found)
+1. **SpaCy Only**: 100.0%
+2. **All Three Combined**: 100.0%
+3. **Regex Only**: 99.5%
+4. **HuggingFace Only**: 38.6%
 
-### Comprehensive Score Ranking (Privacy + Similarity) (%)
-1. **Regex Only**: 94.9%
-2. **All Three Combined**: 88.4%
-3. **SpaCy Only**: 88.0%
-4. **HuggingFace Only**: 57.6%
+### F1 Score Ranking (balanced accuracy & precision)
+1. **Regex Only**: 92.6%
+2. **HuggingFace Only**: 55.4%
+3. **SpaCy Only**: 51.2%
+4. **All Three Combined**: 44.4%
 
-### Balanced Score (Speed × Comprehensive Score)
-1. **Regex Only**: 15.8 (speed×comprehensive)
-2. **HuggingFace Only**: 0.6 (speed×comprehensive)
-3. **All Three Combined**: 0.1 (speed×comprehensive)
-4. **SpaCy Only**: 0.0 (speed×comprehensive)
+### Balanced Score (Speed × Accuracy)
+1. **Regex Only**: 111.1 (speed×accuracy)
+2. **HuggingFace Only**: 0.5 (speed×accuracy)
+3. **SpaCy Only**: 0.2 (speed×accuracy)
+4. **All Three Combined**: 0.2 (speed×accuracy)
 
 ## 📏 Scoring Metrics Explained
 
-### Privacy Score (0-100%)
-- **Rewards comprehensive redaction** that finds all expected sensitive information
-- **Tolerates reasonable over-redaction** (up to 2x expected) as this improves privacy
-- **Penalizes under-redaction** more heavily as this is a privacy risk
-- **Why combined maskers score higher**: They catch more sensitive information
+### Accuracy (0-100%)
+- **Percentage of expected redactions that were actually found**
+- **Higher is better** - shows how well the masker catches sensitive information
+- **Combined maskers should score higher** as they catch more types of sensitive data
 
-### Comprehensive Score (0-100%)
-- **Blended metric**: 70% Privacy Score + 30% Similarity Score
-- **Emphasizes privacy protection** while considering text preservation
-- **Best metric for overall evaluation** in privacy-sensitive applications
+### F1 Score (0-100%)
+- **Balanced metric** combining accuracy (recall) and precision
+- **Accounts for over-redaction** - rewards finding expected redactions without excessive extras
+- **Best metric for overall evaluation** when you want balance between thoroughness and precision
 
-### Traditional Similarity Score
-- **Measures exact match similarity** to expected output using sequence matching
-- **Penalizes over-redaction** as it differs from expected text
-- **Less suitable for privacy evaluation** but useful for exact replication tasks
+### Over-redaction Ratio
+- **How many times more redactions were made than expected**
+- **1.0x = perfect match**, 2.0x = twice as many redactions as expected
+- **Slightly higher ratios can be good** if they catch additional sensitive information
 
 ## 📋 Detailed Results
 
 ### Regex Only
 - **Status**: ✅ Success
-- **Processing Time**: 0.479s
-- **Speed**: 16.7 texts/second
-- **Comprehensive Score**: 94.9%
-- **Privacy Score**: 97.2%
+- **Processing Time**: 0.072s
+- **Speed**: 111.7 texts/second
+- **Accuracy**: 99.5% (expected redactions found)
+- **F1 Score**: 92.6% (balanced accuracy & precision)
 - **Exact Matches**: 0/8
-- **Redaction Coverage**: 99.5%
-- **Over-redaction**: 13.3%
+- **Over-redaction Ratio**: 1.15x expected
 - **Output File**: `test_deid_regex_only.csv`
 
 ### SpaCy Only
 - **Status**: ✅ Success
-- **Processing Time**: 147.152s
-- **Speed**: 0.1 texts/second
-- **Comprehensive Score**: 88.0%
-- **Privacy Score**: 95.6%
+- **Processing Time**: 36.206s
+- **Speed**: 0.2 texts/second
+- **Accuracy**: 100.0% (expected redactions found)
+- **F1 Score**: 51.2% (balanced accuracy & precision)
 - **Exact Matches**: 0/8
-- **Redaction Coverage**: 100.0%
-- **Over-redaction**: 186.7%
+- **Over-redaction Ratio**: 2.91x expected
 - **Output File**: `test_deid_spacy_only.csv`
 
 ### HuggingFace Only
 - **Status**: ✅ Success
-- **Processing Time**: 8.019s
-- **Speed**: 1.0 texts/second
-- **Comprehensive Score**: 57.6%
-- **Privacy Score**: 41.2%
+- **Processing Time**: 6.468s
+- **Speed**: 1.2 texts/second
+- **Accuracy**: 38.6% (expected redactions found)
+- **F1 Score**: 55.4% (balanced accuracy & precision)
 - **Exact Matches**: 0/8
-- **Redaction Coverage**: 38.1%
-- **Over-redaction**: 0.0%
+- **Over-redaction Ratio**: 1.00x expected
 - **Output File**: `test_deid_huggingface_only.csv`
 
 ### All Three Combined
 - **Status**: ✅ Success
-- **Processing Time**: 57.110s
-- **Speed**: 0.1 texts/second
-- **Comprehensive Score**: 88.4%
-- **Privacy Score**: 95.0%
+- **Processing Time**: 42.044s
+- **Speed**: 0.2 texts/second
+- **Accuracy**: 100.0% (expected redactions found)
+- **F1 Score**: 44.4% (balanced accuracy & precision)
 - **Exact Matches**: 0/8
-- **Redaction Coverage**: 100.0%
-- **Over-redaction**: 245.7%
+- **Over-redaction Ratio**: 3.51x expected
 - **Output File**: `test_deid_all_three_combined.csv`
 
 ## 🎯 Recommendations
 
-- **Fastest Processing**: Regex Only (16.7 texts/s)
-- **Best Privacy Protection**: Regex Only (97.2%)
-- **Best Comprehensive Score**: Regex Only (94.9%)
-- **Best Balanced Performance**: Regex Only (score: 15.8)
+- **Fastest Processing**: Regex Only (111.7 texts/s)
+- **Most Accurate**: SpaCy Only (100.0% accuracy)
+- **Best F1 Score**: Regex Only (92.6% F1)
+- **Best Balanced Performance**: Regex Only (score: 111.1)
 
 ### 🛡️ Privacy-First Recommendation
-For maximum privacy protection, use **Regex Only** as it provides the most comprehensive redaction.
+For maximum privacy protection, use **SpaCy Only** as it finds 100.0% of expected redactions.
 Combined maskers typically offer superior privacy protection by catching sensitive information that individual maskers might miss.
 
 ### ⚡ Speed-First Recommendation
-For high-throughput processing, use **Regex Only** which processes 16.7 texts per second.
-This option also provides excellent privacy protection.
+For high-throughput processing, use **Regex Only** which processes 111.7 texts per second.
+Note: This provides 99.5% accuracy compared to the most accurate option.
 
 
 ## 📁 Output Files
