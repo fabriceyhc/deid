@@ -374,9 +374,9 @@ def main():
     print("=" * 70)
     
     # Paths
-    input_path = "./test/data/unprocessed/test.csv"
-    expected_path = "./test/data/processed/test_deid.csv"
-    output_dir = "./test/data/processed"
+    input_path = "./test/data/inputs/test.csv"
+    expected_path = "./test/data/inputs/test_groundtruth.csv"
+    output_dir = "./test/data/outputs"
     
     # Ensure output directory exists
     os.makedirs(output_dir, exist_ok=True)
