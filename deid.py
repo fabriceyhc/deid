@@ -485,7 +485,6 @@ def load_names_cached(file_path: str = "./data/names.json") -> Set[str]:
     Cached version of load_names that only loads once.
     """
     if not os.path.exists(file_path):
-        print(f"Warning: Names file not found at {file_path}")
         return set()
     
     try:
@@ -553,9 +552,10 @@ def optimized_merge_spans(spans: List[Tuple[int, int, str]]) -> List[Tuple[int, 
     return merged
 
 
-def optimized_mask_text(text: str, spans: List[Tuple[int, int, str]], mask: str = '[REDACTED]') -> str:
+def optimized_mask_text(text: str, spans: List[Tuple[int, int, str]], mask: str = '[REDACTED]', custom_masks: Optional[dict] = None) -> str:
     """
     Optimized text masking using list pre-allocation and efficient string building.
+    Support for custom masks per entity type.
     """
     if not spans:
         return text
@@ -569,7 +569,13 @@ def optimized_mask_text(text: str, spans: List[Tuple[int, int, str]], mask: str 
             continue  # Skip overlapping spans
         
         result_parts.append(text[last_end:start])
-        result_parts.append(mask)
+        
+        # Use custom mask if available for this entity type
+        if custom_masks and label in custom_masks:
+            result_parts.append(custom_masks[label])
+        else:
+            result_parts.append(mask)
+            
         last_end = end
     
     result_parts.append(text[last_end:])
@@ -581,16 +587,84 @@ class Deidentifier:
     Highly optimized deidentifier with parallel processing, caching, and vectorization.
     """
     
-    def __init__(self, maskers: List, default_mask: str = '[REDACTED]', n_jobs: int = None):
+    def __init__(self, maskers: List, default_mask: str = '[REDACTED]', n_jobs: Optional[int] = None, verbose: bool = False, dry_run: bool = False, custom_masks: Optional[dict] = None):
         self.maskers = maskers
         self.default_mask = default_mask
         self.n_jobs = n_jobs or min(mp.cpu_count(), 4)  # Limit to 4 to avoid overwhelming system
+        self.verbose = verbose
+        self.dry_run = dry_run
+        
+        # Custom masks for different entity types
+        self.custom_masks = custom_masks or {}
         
         # Pre-compile mask replacement pattern
         self._mask_pattern = re.compile(r'(' + re.escape(default_mask) + r')(?:\s*\1)+')
         
+        # Statistics tracking
+        self.stats = {
+            'total_processed': 0,
+            'entities_found': {},
+            'total_entities': 0
+        }
+        
         # Set up tqdm for pandas
         tqdm.pandas(desc="De-identifying")
+
+    def _show_verbose_output(self, original_text: str, spans: List[Tuple[int, int, str]], context_chars: int = 30):
+        """
+        Display verbose output showing what was found and context around replacements.
+        """
+        if not spans:
+            print("[VERBOSE] No entities found in text.")
+            return
+            
+        print(f"\n[VERBOSE] Found {len(spans)} entities:")
+        for i, (start, end, label) in enumerate(spans, 1):
+            entity_text = original_text[start:end]
+            
+            # Get context around the entity
+            context_start = max(0, start - context_chars)
+            context_end = min(len(original_text), end + context_chars)
+            
+            before_context = original_text[context_start:start]
+            after_context = original_text[end:context_end]
+            
+            print(f"  {i}. {label}: '{entity_text}'")
+            print(f"     Context: ...{before_context}[{entity_text}]{after_context}...")
+            print(f"     Position: {start}-{end}")
+        print()
+
+    def _update_stats(self, spans: List[Tuple[int, int, str]]):
+        """
+        Update statistics tracking.
+        """
+        self.stats['total_processed'] += 1
+        self.stats['total_entities'] += len(spans)
+        
+        for _, _, label in spans:
+            self.stats['entities_found'][label] = self.stats['entities_found'].get(label, 0) + 1
+
+    def get_stats(self) -> dict:
+        """
+        Get current statistics.
+        """
+        return self.stats.copy()
+
+    def print_stats(self):
+        """
+        Print statistics summary.
+        """
+        print("\n=== De-identification Statistics ===")
+        print(f"Total texts processed: {self.stats['total_processed']}")
+        print(f"Total entities found: {self.stats['total_entities']}")
+        
+        if self.stats['entities_found']:
+            print("\nEntity types found:")
+            for entity_type, count in sorted(self.stats['entities_found'].items()):
+                print(f"  {entity_type}: {count}")
+        else:
+            print("No entities were found.")
+        print("===================================\n")
 
     def _process_single_text(self, text: str, entity_types: Optional[List[str]] = None) -> str:
         """
@@ -623,6 +697,9 @@ class Deidentifier:
                     continue
 
         if not all_spans:
+            if self.verbose:
+                print(f"[VERBOSE] No entities found in: '{text[:100]}{'...' if len(text) > 100 else ''}''")
+            self._update_stats([])
             return text
 
         # Filter spans efficiently
@@ -632,13 +709,33 @@ class Deidentifier:
         ]
 
         if not filtered_spans:
+            if self.verbose:
+                print(f"[VERBOSE] All entities filtered out for: '{text[:100]}{'...' if len(text) > 100 else ''}''")
+            self._update_stats([])
             return text
 
         merged_spans = optimized_merge_spans(filtered_spans)
-        masked_text = optimized_mask_text(text, merged_spans, mask=self.default_mask)
+        
+        # Update statistics
+        self._update_stats(merged_spans)
+        
+        # Show verbose output if enabled
+        if self.verbose:
+            print(f"\n[VERBOSE] Processing: '{text[:100]}{'...' if len(text) > 100 else ''}'")
+            self._show_verbose_output(text, merged_spans)
+        
+        # Handle dry run mode
+        if self.dry_run:
+            print(f"[DRY RUN] Would mask {len(merged_spans)} entities in text")
+            return text
+        
+        masked_text = optimized_mask_text(text, merged_spans, mask=self.default_mask, custom_masks=self.custom_masks)
         
         # Apply consecutive tag replacement
         masked_text = self._mask_pattern.sub(r'\1', masked_text)
+        
+        if self.verbose:
+            print(f"[VERBOSE] Result: '{masked_text[:100]}{'...' if len(masked_text) > 100 else ''}'")
         
         return masked_text
 
@@ -672,6 +769,9 @@ class Deidentifier:
         Optimized CSV processing with chunking and vectorized operations.
         """
         try:
+            # Reset statistics for CSV processing
+            self.stats = {'total_processed': 0, 'entities_found': {}, 'total_entities': 0}
+            
             # Process CSV in chunks for memory efficiency
             chunk_iter = pd.read_csv(input_csv_path, chunksize=chunk_size)
             first_chunk = True
@@ -687,15 +787,23 @@ class Deidentifier:
                 
                 # Process in batch
                 processed_texts = self.deidentify_batch(text_list, entity_types)
-                chunk_df[column_name] = processed_texts
                 
-                # Write chunk to output
-                mode = 'w' if first_chunk else 'a'
-                header = first_chunk
-                chunk_df.to_csv(output_csv_path, mode=mode, header=header, index=False)
-                first_chunk = False
+                if not self.dry_run:
+                    chunk_df[column_name] = processed_texts
+                    
+                    # Write chunk to output
+                    mode = 'w' if first_chunk else 'a'
+                    header = first_chunk
+                    chunk_df.to_csv(output_csv_path, mode=mode, header=header, index=False)
+                    first_chunk = False
                 
-            print(f"De-identified data successfully saved to {output_csv_path}")
+            if self.dry_run:
+                print(f"[DRY RUN] Would have saved de-identified data to {output_csv_path}")
+            else:
+                print(f"De-identified data successfully saved to {output_csv_path}")
+                
+            # Print statistics
+            self.print_stats()
             
         except FileNotFoundError:
             print(f"Error: Input CSV file not found at {input_csv_path}")
@@ -773,10 +881,10 @@ iOS/MPS Device Usage Examples:
     parser.add_argument("--column_name", type=str, help="Name of the column to de-identify in the CSV.")
     parser.add_argument("--output_csv", type=str, help="Path to save the de-identified CSV file.")
     parser.add_argument("--output_text_file", type=str, help="Path to save the de-identified text output.")
-    parser.add_argument("--chunk_size", type=int, default=1000, help="Chunk size for CSV processing (default: 1000)")
+    parser.add_argument("--chunk_size", type=int, default=5, help="Chunk size for CSV processing (default: 5)")
 
     parser.add_argument("--maskers", nargs='+', choices=['regex', 'spacy', 'huggingface'],
-                        default=['regex'], help="List of maskers to use. Default: ['regex']")
+                        default=['regex', 'spacy', 'huggingface'], help="List of maskers to use. Default: ['regex', 'spacy', 'huggingface']")
     parser.add_argument("--spacy_model", type=str, default="en_core_web_trf",
                         help="SpaCy model name. Default: en_core_web_trf")
     parser.add_argument("--spacy_device", type=str, default="auto", 
@@ -795,6 +903,14 @@ iOS/MPS Device Usage Examples:
                         help="Specific entity types to mask (e.g., PERSON ORG DATE).")
     parser.add_argument("--default_mask", type=str, default="[REDACTED]",
                         help="Replacement string for identified PHI. Default: '[REDACTED]'")
+    parser.add_argument("--verbose", "-v", action='store_true', 
+                        help="Show detailed information about entities found and replacements made.")
+    parser.add_argument("--dry_run", action='store_true',
+                        help="Show what would be redacted without actually making changes.")
+    parser.add_argument("--show_stats", action='store_true',
+                        help="Display statistics about entities found during processing.")
+    parser.add_argument("--custom_masks", type=str, default=None,
+                        help="JSON string or file path with custom masks for entity types (e.g., '{\"PERSON\":\"[NAME]\",\"SSN\":\"[SSN_REDACTED]\"}').")
 
     args = parser.parse_args()
 
@@ -807,34 +923,23 @@ iOS/MPS Device Usage Examples:
         return
 
     # Check device availability and compatibility
-    print("Checking device availability...")
-    optimal_device, device_available = detect_optimal_device()
-    if optimal_device == "mps":
-        print("✓ iOS/MPS acceleration available and working")
-        # Special warning for iOS users about SpaCy compatibility
-        if "spacy" in args.maskers:
-            print("\n⚠️  iOS/MPS COMPATIBILITY NOTICE:")
-            print("SpaCy has known issues with MPS devices that may cause 'placeholder storage' errors.")
-            print("If you encounter errors, try: --maskers regex huggingface")
-            print()
-    elif optimal_device.startswith("cuda"):
-        print(f"✓ CUDA GPU acceleration available: {optimal_device}")
-    else:
-        print("ℹ Using CPU processing (no GPU acceleration available)")
+    optimal_device, _ = detect_optimal_device()
+    if optimal_device == "mps" and "spacy" in args.maskers:
+        print("\n⚠️  iOS/MPS COMPATIBILITY NOTICE:")
+        print("SpaCy has known issues with MPS devices that may cause errors.")
+        print("If you encounter errors, try: --maskers regex huggingface")
+        print()
     
     # Initialize optimized maskers
     active_maskers = []
-    print("Initializing optimized maskers...")
     
     if "regex" in args.maskers:
         known_names = load_names_cached(args.names_file)
         active_maskers.append(RegexMasker(known_names=known_names, debug=args.regex_debug))
-        print(f"RegexMasker initialized with {len(known_names)} known names.")
         
     if "spacy" in args.maskers:
         try:
             active_maskers.append(SpaCyNERMasker(model_name=args.spacy_model, device=args.spacy_device))
-            print(f"SpaCyNERMasker initialized with model: {args.spacy_model}, device: {args.spacy_device}")
         except Exception as e:
             error_msg = str(e)
             print(f"Error initializing SpaCy model '{args.spacy_model}': {e}")
@@ -873,7 +978,7 @@ iOS/MPS Device Usage Examples:
                     device=device,
                     batch_size=args.hf_batch_size
                 ))
-                print(f"HuggingfaceMasker initialized: {model_name}")
+                pass
             except Exception as e:
                 print(f"Error initializing HF model '{model_name}': {e}")
                 print("This might be due to iOS/MPS compatibility issues.")
@@ -884,25 +989,49 @@ iOS/MPS Device Usage Examples:
         print("No maskers initialized successfully. Exiting.")
         return
 
+    # Parse custom masks if provided
+    custom_masks = None
+    if args.custom_masks:
+        try:
+            # Try to load as JSON string first
+            if args.custom_masks.startswith('{'):
+                custom_masks = json.loads(args.custom_masks)
+            else:
+                # Try to load as file path
+                with open(args.custom_masks, 'r', encoding='utf-8') as f:
+                    custom_masks = json.load(f)
+            pass
+        except (json.JSONDecodeError, FileNotFoundError) as e:
+            print(f"Error loading custom masks: {e}")
+            print("Using default mask for all entity types.")
+    
     # Initialize optimized deidentifier
     deidentifier = Deidentifier(
         active_maskers, 
         default_mask=args.default_mask,
-        n_jobs=args.n_jobs
+        n_jobs=args.n_jobs,
+        verbose=args.verbose,
+        dry_run=args.dry_run,
+        custom_masks=custom_masks
     )
-    print(f"Deidentifier initialized with {len(active_maskers)} masker(s), using {deidentifier.n_jobs} parallel jobs.")
+    if args.verbose:
+        print(f"Initialized {len(active_maskers)} masker(s), using {deidentifier.n_jobs} parallel jobs.")
+    
+    if args.verbose:
+        print("[VERBOSE] Verbose mode enabled - detailed output will be shown.")
+    if args.dry_run:
+        print("[DRY RUN] Dry run mode enabled - no actual changes will be made.")
     
     entity_types = args.entity_types
-    if entity_types:
+    if entity_types and args.verbose:
         print(f"Targeting entity types: {', '.join(entity_types)}")
-    else:
-        print("Using default entity detection scope.")
 
     # Process input
     if args.input_csv:
-        print(f"\nProcessing CSV: {args.input_csv}")
-        print(f"Column: '{args.column_name}', Chunk size: {args.chunk_size}")
-        print(f"Output: {args.output_csv}")
+        if args.verbose:
+            print(f"\nProcessing CSV: {args.input_csv}")
+            print(f"Column: '{args.column_name}', Chunk size: {args.chunk_size}")
+            print(f"Output: {args.output_csv}")
         
         deidentifier.deidentify_csv(
             input_csv_path=args.input_csv,
@@ -912,19 +1041,32 @@ iOS/MPS Device Usage Examples:
             chunk_size=args.chunk_size
         )
     elif args.text:
-        print(f"\nOriginal: \"{args.text}\"")
+        if args.verbose:
+            print(f"\nOriginal: \"{args.text}\"")
         masked_text = deidentifier.deidentify(args.text, entity_types=entity_types)
-        print(f"Masked:   \"{masked_text}\"")
+        print(f"Masked: \"{masked_text}\"")
         
-        if args.output_text_file:
+        # Show statistics if requested or if verbose
+        if args.show_stats or args.verbose:
+            deidentifier.print_stats()
+        
+        if args.output_text_file and not args.dry_run:
             try:
                 with open(args.output_text_file, 'w', encoding='utf-8') as f:
                     f.write(masked_text)
-                print(f"Output saved to: {args.output_text_file}")
+                if args.verbose:
+                    print(f"Output saved to: {args.output_text_file}")
             except IOError as e:
                 print(f"Error writing to {args.output_text_file}: {e}")
+        elif args.output_text_file and args.dry_run and args.verbose:
+            print(f"[DRY RUN] Would have saved output to: {args.output_text_file}")
 
-    print("\nOptimized de-identification complete.")
+    # Final statistics display if requested
+    if args.show_stats and not args.verbose:  # Don't duplicate if verbose already showed stats
+        deidentifier.print_stats()
+    
+    if args.verbose:
+        print("\nDe-identification complete.")
 
 
 if __name__ == "__main__":
