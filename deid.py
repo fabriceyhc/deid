@@ -132,7 +132,10 @@ class RegexMasker:
             (re.compile(r"(?:\+?1[-.\s]?)?(?:\(\d{3}\)|\d{3})[-.\s]?\d{3}[-.\s]?\d{4}(?=[^0-9]|$)"), "PHONE"),
             (re.compile(r"[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}(?=[^a-zA-Z0-9._%+\-]|$)"), "EMAIL"),
             (re.compile(r"(?:MRN\s*\d{5,}|\d{7,})"), "MRN"),
-            (re.compile(r"\d{1,5}\s+(?:[A-Za-z0-9]+\s?){1,6},\s?[A-Za-z]+(?:[ -][A-Za-z]+)*,\s?[A-Z]{2},\s?\d{5}"), "ADDRESS"),
+            # Updated address pattern to handle various formats
+            (re.compile(r"\d{1,5}\s+(?:[A-Za-z0-9]+\s?){2,8}(?:,\s?)?[A-Za-z]+(?:[ -][A-Za-z]+)*(?:,\s?)?[A-Z]{2}(?:,?\s?\d{5})?"), "ADDRESS"),
+            # Medical signature pattern: DWR Chen DWA [REDACTED] or similar patterns
+            (re.compile(r"\b(?:DWR|DWA|MD|Dr\.?)\s+([A-Z][a-z]+)\s+(?:DWR|DWA|MD|Dr\.?|[A-Z]{2,4})\b"), "PERSON"),
         ]
 
         # Pre-compile token extraction pattern
@@ -171,21 +174,47 @@ class RegexMasker:
         found_spans = []
         normalized_text = self._normalize_text(text)
 
+        # Find all existing redaction tags to avoid re-redacting
+        redacted_ranges = []
+        redacted_pattern = re.compile(r'\[REDACTED\]')
+        for match in redacted_pattern.finditer(normalized_text):
+            redacted_ranges.append((match.start(), match.end()))
+
         for pattern, label in self._compiled_patterns:
             if entity_types_set and label not in entity_types_set:
                 continue
 
             for match in pattern.finditer(normalized_text):
                 start, end = match.start(), match.end()
+                matched_str = normalized_text[start:end]
                 
                 if label == "PERSON":
-                    matched_str = normalized_text[start:end]
-                    if not self._validate_person_tokens(matched_str):
+                    # Check if this is a medical signature pattern with capture group
+                    if match.groups() and len(match.groups()) >= 1:
+                        # Extract just the name from the capture group for validation
+                        captured_name = match.group(1)
+                        if not self._validate_person_tokens(captured_name):
+                            continue
+                        # For medical signatures, redact the entire match
+                        # but use the captured name's position for more precise redaction
+                        name_start = match.start(1)
+                        name_end = match.end(1)
+                        # Skip if this span overlaps with any existing redaction
+                        if not any(not (name_end <= r_start or name_start >= r_end) for r_start, r_end in redacted_ranges):
+                            found_spans.append((name_start, name_end, label))
+                        if self.debug:
+                            print(f"[DEBUG] RegexMasker Medical Signature: '{captured_name}' from '{matched_str}' as {label}")
                         continue
+                    else:
+                        # Regular person name validation
+                        if not self._validate_person_tokens(matched_str):
+                            continue
 
-                found_spans.append((start, end, label))
-                if self.debug:
-                    print(f"[DEBUG] RegexMasker Matched '{normalized_text[start:end]}' as {label}")
+                # Skip if this span overlaps with any existing redaction
+                if not any(not (end <= r_start or start >= r_end) for r_start, r_end in redacted_ranges):
+                    found_spans.append((start, end, label))
+                    if self.debug:
+                        print(f"[DEBUG] RegexMasker Matched '{matched_str}' as {label}")
                     
         return found_spans
 
@@ -587,12 +616,13 @@ class Deidentifier:
     Highly optimized deidentifier with parallel processing, caching, and vectorization.
     """
     
-    def __init__(self, maskers: List, default_mask: str = '[REDACTED]', n_jobs: Optional[int] = None, verbose: bool = False, dry_run: bool = False, custom_masks: Optional[dict] = None):
+    def __init__(self, maskers: List, default_mask: str = '[REDACTED]', n_jobs: Optional[int] = None, verbose: bool = False, dry_run: bool = False, custom_masks: Optional[dict] = None, num_passes: int = 2):
         self.maskers = maskers
         self.default_mask = default_mask
         self.n_jobs = n_jobs or min(mp.cpu_count(), 4)  # Limit to 4 to avoid overwhelming system
         self.verbose = verbose
         self.dry_run = dry_run
+        self.num_passes = max(1, num_passes)  # Ensure at least 1 pass
         
         # Custom masks for different entity types
         self.custom_masks = custom_masks or {}
@@ -669,75 +699,105 @@ class Deidentifier:
     def _process_single_text(self, text: str, entity_types: Optional[List[str]] = None) -> str:
         """
         Optimized single text processing with early returns and minimal allocations.
+        Supports multiple passes for improved entity detection.
         """
         if pd.isna(text) or not isinstance(text, str) or not text.strip():
             return text
 
-        all_spans = []
+        current_text = text
+        total_passes_stats = []
         
-        # Process maskers sequentially to avoid memory overhead
-        for masker_instance in self.maskers:
-            try:
-                spans = masker_instance.get_entity_spans(text, entity_types=entity_types)
-                all_spans.extend(spans)
-            except Exception as e:
-                error_msg = str(e)
-                masker_name = type(masker_instance).__name__
-                
-                # Special handling for MPS-related errors
-                if "MPS" in error_msg or "Metal" in error_msg or "placeholder storage" in error_msg.lower():
-                    print(f"MPS Error in {masker_name}: {e}")
-                    if "SpaCy" in masker_name:
-                        print("💡 To avoid this error:")
-                        print("   - Use: --maskers regex huggingface (skip SpaCy)")
-                        print("   - Or: --spacy_device cpu (force SpaCy CPU)")
-                    continue
+        # Process text through multiple passes
+        for pass_num in range(self.num_passes):
+            if self.verbose and self.num_passes > 1:
+                print(f"\n[VERBOSE] === Pass {pass_num + 1}/{self.num_passes} ===")
+            
+            all_spans = []
+            
+            # Process maskers sequentially to avoid memory overhead
+            for masker_instance in self.maskers:
+                try:
+                    spans = masker_instance.get_entity_spans(current_text, entity_types=entity_types)
+                    all_spans.extend(spans)
+                except Exception as e:
+                    error_msg = str(e)
+                    masker_name = type(masker_instance).__name__
+                    
+                    # Special handling for MPS-related errors
+                    if "MPS" in error_msg or "Metal" in error_msg or "placeholder storage" in error_msg.lower():
+                        print(f"MPS Error in {masker_name}: {e}")
+                        if "SpaCy" in masker_name:
+                            print("💡 To avoid this error:")
+                            print("   - Use: --maskers regex huggingface (skip SpaCy)")
+                            print("   - Or: --spacy_device cpu (force SpaCy CPU)")
+                        continue
+                    else:
+                        print(f"Error in {masker_name}: {e}")
+                        continue
+
+            if not all_spans:
+                if self.verbose:
+                    if self.num_passes > 1:
+                        print(f"[VERBOSE] Pass {pass_num + 1}: No entities found in: '{current_text[:100]}{'...' if len(current_text) > 100 else ''}''")
+                    else:
+                        print(f"[VERBOSE] No entities found in: '{current_text[:100]}{'...' if len(current_text) > 100 else ''}''")
+                # If no spans found in this pass, continue to next pass (if any) or finish
+                total_passes_stats.append([])
+                continue
+
+            # Filter spans efficiently - exclude uppercase filtering for addresses
+            filtered_spans = [
+                (start, end, label) for start, end, label in all_spans
+                if not (current_text[start:end].isupper() and 'person' not in label.lower() and 'address' not in label.lower())
+            ]
+
+            if not filtered_spans:
+                if self.verbose:
+                    if self.num_passes > 1:
+                        print(f"[VERBOSE] Pass {pass_num + 1}: All entities filtered out for: '{current_text[:100]}{'...' if len(current_text) > 100 else ''}''")
+                    else:
+                        print(f"[VERBOSE] All entities filtered out for: '{current_text[:100]}{'...' if len(current_text) > 100 else ''}''")
+                total_passes_stats.append([])
+                continue
+
+            merged_spans = optimized_merge_spans(filtered_spans)
+            total_passes_stats.append(merged_spans)
+            
+            # Show verbose output if enabled
+            if self.verbose:
+                if self.num_passes > 1:
+                    print(f"\n[VERBOSE] Pass {pass_num + 1} Processing: '{current_text[:100]}{'...' if len(current_text) > 100 else ''}'")
                 else:
-                    print(f"Error in {masker_name}: {e}")
-                    continue
-
-        if not all_spans:
+                    print(f"\n[VERBOSE] Processing: '{current_text[:100]}{'...' if len(current_text) > 100 else ''}'")
+                self._show_verbose_output(current_text, merged_spans)
+            
+            # Handle dry run mode
+            if self.dry_run:
+                if self.num_passes > 1:
+                    print(f"[DRY RUN] Pass {pass_num + 1}: Would mask {len(merged_spans)} entities in text")
+                else:
+                    print(f"[DRY RUN] Would mask {len(merged_spans)} entities in text")
+                continue
+            
+            # Apply masking to current text for next pass
+            current_text = optimized_mask_text(current_text, merged_spans, mask=self.default_mask, custom_masks=self.custom_masks)
+            
+            # Apply consecutive tag replacement
+            current_text = self._mask_pattern.sub(r'\1', current_text)
+            
             if self.verbose:
-                print(f"[VERBOSE] No entities found in: '{text[:100]}{'...' if len(text) > 100 else ''}''")
-            self._update_stats([])
-            return text
+                if self.num_passes > 1:
+                    print(f"[VERBOSE] Pass {pass_num + 1} Result: '{current_text[:100]}{'...' if len(current_text) > 100 else ''}'")
+                else:
+                    print(f"[VERBOSE] Result: '{current_text[:100]}{'...' if len(current_text) > 100 else ''}'")
 
-        # Filter spans efficiently
-        filtered_spans = [
-            (start, end, label) for start, end, label in all_spans
-            if not (text[start:end].isupper() and 'person' not in label.lower())
-        ]
-
-        if not filtered_spans:
-            if self.verbose:
-                print(f"[VERBOSE] All entities filtered out for: '{text[:100]}{'...' if len(text) > 100 else ''}''")
-            self._update_stats([])
-            return text
-
-        merged_spans = optimized_merge_spans(filtered_spans)
+        # Update statistics with all spans found across all passes
+        all_spans_combined = []
+        for pass_spans in total_passes_stats:
+            all_spans_combined.extend(pass_spans)
+        self._update_stats(all_spans_combined)
         
-        # Update statistics
-        self._update_stats(merged_spans)
-        
-        # Show verbose output if enabled
-        if self.verbose:
-            print(f"\n[VERBOSE] Processing: '{text[:100]}{'...' if len(text) > 100 else ''}'")
-            self._show_verbose_output(text, merged_spans)
-        
-        # Handle dry run mode
-        if self.dry_run:
-            print(f"[DRY RUN] Would mask {len(merged_spans)} entities in text")
-            return text
-        
-        masked_text = optimized_mask_text(text, merged_spans, mask=self.default_mask, custom_masks=self.custom_masks)
-        
-        # Apply consecutive tag replacement
-        masked_text = self._mask_pattern.sub(r'\1', masked_text)
-        
-        if self.verbose:
-            print(f"[VERBOSE] Result: '{masked_text[:100]}{'...' if len(masked_text) > 100 else ''}'")
-        
-        return masked_text
+        return current_text
 
     def deidentify(self, text: str, entity_types: Optional[List[str]] = None) -> str:
         """
@@ -911,6 +971,8 @@ iOS/MPS Device Usage Examples:
                         help="Display statistics about entities found during processing.")
     parser.add_argument("--custom_masks", type=str, default=None,
                         help="JSON string or file path with custom masks for entity types (e.g., '{\"PERSON\":\"[NAME]\",\"SSN\":\"[SSN_REDACTED]\"}').")
+    parser.add_argument("--num_passes", type=int, default=2,
+                        help="Number of de-identification passes to run. Multiple passes can improve detection. Default: 2")
 
     args = parser.parse_args()
 
@@ -1012,10 +1074,11 @@ iOS/MPS Device Usage Examples:
         n_jobs=args.n_jobs,
         verbose=args.verbose,
         dry_run=args.dry_run,
-        custom_masks=custom_masks
+        custom_masks=custom_masks,
+        num_passes=args.num_passes
     )
     if args.verbose:
-        print(f"Initialized {len(active_maskers)} masker(s), using {deidentifier.n_jobs} parallel jobs.")
+        print(f"Initialized {len(active_maskers)} masker(s), using {deidentifier.n_jobs} parallel jobs, {deidentifier.num_passes} passes.")
     
     if args.verbose:
         print("[VERBOSE] Verbose mode enabled - detailed output will be shown.")
