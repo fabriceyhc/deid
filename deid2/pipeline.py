@@ -17,6 +17,17 @@ from .rules import ClinicalRuleMasker
 from .spans import ResolveConfig, Span, mask, resolve
 
 RESOURCE_DIR = pathlib.Path(__file__).parent / "resources"
+NAMES_JSON = pathlib.Path(__file__).parent.parent / "data" / "names.json"
+
+
+def load_given_names(path=None) -> Set[str]:
+    """First names used to gate the post-mask given-name rule."""
+    import json
+    p = pathlib.Path(path or NAMES_JSON)
+    if not p.exists():
+        return set()
+    d = json.loads(p.read_text())
+    return {x.lower() for x in (d.get("men", []) + d.get("women", []))}
 
 
 def load_allowlists(resource_dir: Optional[str] = None):
@@ -176,6 +187,9 @@ def build(
                 threshold=gliner_threshold, batch_size=max(4, batch_size // 4)))
         ner = backends[0] if len(backends) == 1 else CompositeNER(backends)
 
-    return Deidentifier2(patient_gazetteer=pg, roster=roster,
-                         rules=ClinicalRuleMasker(), ner=ner,
-                         config=config, resource_dir=resource_dir)
+    return Deidentifier2(
+        patient_gazetteer=pg, roster=roster,
+        rules=ClinicalRuleMasker(given_names=load_given_names(),
+                                 clinical_allowlist=clinical_allow,
+                                 general_allowlist=general_allow),
+        ner=ner, config=config, resource_dir=resource_dir)

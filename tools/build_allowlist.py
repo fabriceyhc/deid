@@ -51,6 +51,12 @@ mcburney murphy rovsing psoas obturator homan kernig brudzinski babinski
 romberg lasegue phalen tinel finkelstein trendelenburg allen adson
 bard parker lister mayo kelly kocher deaver richardson balfour bookwalter
 port cath picc midline groshong hickman broviac tenckhoff
+auris albicans glabrata tropicalis parapsilosis krusei dubliniensis
+aureus epidermidis lugdunensis saprophyticus faecalis faecium
+pneumoniae pyogenes agalactiae viridans anginosus constellatus
+aeruginosa maltophilia cepacia baumannii cloacae mirabilis marcescens
+fragilis nucleatum difficile perfringens tuberculosis avium abscessus
+neoformans capsulatum immitis jirovecii fumigatus
 lyme legionella salmonella shigella listeria yersinia brucella bartonella rickettsia
 klebsiella escherichia serratia proteus providencia morganella citrobacter enterobacter
 pseudomonas acinetobacter stenotrophomonas burkholderia moraxella haemophilus

@@ -17,7 +17,7 @@ non-vetoable, so the allowlist cannot suppress them.
 from __future__ import annotations
 
 import re
-from typing import List, Pattern, Tuple
+from typing import List, Optional, Pattern, Set, Tuple
 
 from .spans import Span
 
@@ -37,7 +37,13 @@ CREDENTIALS = (r"M\.?D\.?|D\.?O\.?|N\.?P\.?|P\.?A\.?-?C?|R\.?N\.?|MSN|BSN|CNS|CN
                r"RDN|CNSC|LCSW|MSW|PharmD|R\.?Ph\.?|PGY-?\d|R\d|MPH")
 
 # Section labels after which a name-shaped token is a real name, not prose.
-NAME_ANCHORS = (r"Patient(?:\s+Name)?|Pt\.?\s*Name|Name|PATIENT|Resident|Intern|Attending|"
+# "Med Name:", "Test Name:", "Drug Name:" label a *thing*, not a person.
+# Without these lookbehinds the bare "Name" anchor captures the medication:
+# "Med Name: Morphine Clonodine Pain" was redacted to "[NAME]".
+NAME_ANCHORS = (r"Patient(?:\s+Name)?|Pt\.?\s*Name|"
+                r"(?<!Med\s)(?<!Medication\s)(?<!Drug\s)(?<!Test\s)(?<!Lab\s)"
+                r"(?<!Order\s)(?<!Product\s)(?<!Device\s)Name|"
+                r"PATIENT|Resident|Intern|Attending|"
                 r"Fellow|Provider|Physician(?:\s+ordering)?|Surgeon|Consultant|Referring|"
                 r"Author|Signed\s+by|Electronically\s+signed(?:\s+by)?|Dictated\s+by|"
                 r"Cosigned(?:\s+by)?|Entered\s+by|Ordered\s+by|Performed\s+by|"
@@ -58,6 +64,15 @@ _RULES: List[Tuple[Pattern, str, int, bool]] = [
     (TITLE_ANCHOR, "NAME", 1, False),
     (re.compile(rf"\b({NAME_SEQ})\s*,\s*(?:{CREDENTIALS})\b"), "NAME", 1, False),
     (re.compile(rf"\b({NAME_SEQ})\s+(?:{CREDENTIALS})\b(?!\s*[a-z])"), "NAME", 1, False),
+    # "Surname,Given" is how contact and code-status fields are written
+    # ("Primary contact: Klepp,Chellee K"). The NER layer reliably tags the
+    # surname and just as reliably misses the given name after the comma,
+    # leaving a relative's first name in the clear.
+    #
+    # Only the anchored form is matched: an adjacent mask is proof a name was
+    # there. A bare "Word, Word" pattern is far too broad in clinical text --
+    # it matches drug lists ("Latuda, Risperdal"), tox panels ("Amphetamines,
+    # Barbituates") and specimen types ("Blood, Peripheral").
     # Half-redacted hyphenated surnames left behind by the upstream pass.
     (re.compile(r"_{3,}\s*-\s*([A-Z][a-z]{1,20})\b"), "NAME", 1, False),
     (re.compile(rf"\b({NAME_TOK})\s*-\s*_{{3,}}"), "NAME", 1, False),
@@ -131,6 +146,8 @@ none unknown other see same self deferred pending refused declined yes no
 male female home multiple various per with without and the for from
 to at in on by of or as is was be do due new old per via than then
 todo tbd pcp rn np pa md do dds rd lvn bsn msn
+preference preferences instruction instructions choice choices option options
+list listing details detail info information section form template field
 """.split())
 
 _NAME_TOKEN_SPLIT = re.compile(r"[ \t]+")
@@ -141,6 +158,21 @@ _FOLLOWED_BY_COLON = re.compile(r"[ \t]*:")
 # label and looking back is far cheaper than scanning a name pattern at every
 # offset and rejecting it with a lookahead.
 _ID_FIELD = re.compile(r"\b(?:MRN|MR#|DOB|D\.O\.B\.?|Date\s+of\s+Birth)\b", re.I)
+
+# A given name surviving after a masked surname: "Klepp,Chellee K" becomes
+# "[NAME],CHELLEE K" when the NER tags the surname and misses the rest.
+# Ungated, this pattern is overwhelmingly credentials -- "Jane Smith, PA-C"
+# leaves "[NAME], PA-C" -- so on a 2,000-note sample it fired 405 times and
+# only 3 were names. It is therefore gated on a known-given-name lookup, which
+# on the same sample keeps 12 hits, all of them real.
+_MASK_THEN_WORD = re.compile(
+    r"(?:\[NAME\]|_{3,})[,;][ \t]?([A-Z][A-Za-z'\-]{1,20}(?:[ \t]+[A-Z]\b)?)")
+
+CREDENTIAL_TOKENS = set("""
+pa pac ms ma rn np md do pt ot rd cc ct ca dr phy sp od sh aud cpo facc lmft
+mbbs asw ms4 msw lcsw crna dpm dds bsn msn dnp acnp fnp agacnp rdap aahivs
+cnm cns rdn cnsc lvn rph pharmd psyd phd edd mph mba faap facp fccp
+""".split())
 _NAME_BEFORE_FIELD = re.compile(rf"({NAME_SEQ})[ \t]+$")
 
 
@@ -183,11 +215,43 @@ _HEADER_NOISE = re.compile(
 class ClinicalRuleMasker:
     """Regex layer tuned to the residual-PHI profile of this corpus."""
 
-    def __init__(self, redact_urls: bool = True):
+    def __init__(self, redact_urls: bool = True,
+                 given_names: Optional[Set[str]] = None,
+                 clinical_allowlist: Optional[Set[str]] = None,
+                 general_allowlist: Optional[Set[str]] = None):
         self.redact_urls = redact_urls
+        self.given_names = {g.lower() for g in (given_names or set())}
+        self.clinical_allowlist = {c.lower() for c in (clinical_allowlist or set())}
+        self.general_allowlist = {g.lower() for g in (general_allowlist or set())}
+
+    def _given_name_after_mask(self, text: str) -> List[Span]:
+        """Given names left behind after a masked surname, gated on a name list."""
+        if not self.given_names:
+            return []
+        out: List[Span] = []
+        for m in _MASK_THEN_WORD.finditer(text):
+            word = m.group(1).split()[0]
+            key = word.lower().replace("-", "").replace("'", "")
+            if len(word) < 4:
+                continue
+            if key in CREDENTIAL_TOKENS or key in self.clinical_allowlist:
+                continue
+            if key not in self.given_names:
+                # An unusual given name will not be in any name list
+                # ("CHELLEE", "MARYKE"). Accept a long all-caps token as a
+                # fallback, but only unhyphenated: every credential that
+                # reaches here is hyphenated ("GNP-BC", "ACNP-BC", "NSCA-CPT")
+                # as is the one facility form ("UCLA-SM").
+                if not (word.isupper() and len(word) >= 6
+                        and "-" not in word
+                        and key not in self.general_allowlist):
+                    continue
+            out.append(Span(m.start(1), m.end(1), "NAME",
+                            source="rule", score=1.0, vetoable=False))
+        return out
 
     def get_spans(self, text: str) -> List[Span]:
-        spans: List[Span] = []
+        spans: List[Span] = self._given_name_after_mask(text)
         for start, end in _names_before_id_fields(text):
             trimmed = _trim_name(text, start, end)
             if trimmed is not None:

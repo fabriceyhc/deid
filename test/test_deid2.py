@@ -22,8 +22,12 @@ def deid(text, spans, cfg=None):
     return mask(text, resolve(text, spans, CLINICAL, GENERAL, cfg))
 
 
-def rule_deid(text, cfg=None):
-    return deid(text, ClinicalRuleMasker().get_spans(text), cfg)
+GIVEN = {"robin", "ruben", "jacqueline", "chellee", "gary", "susan", "emma"}
+
+
+def rule_deid(text, cfg=None, given=GIVEN):
+    masker = ClinicalRuleMasker(given_names=given, clinical_allowlist=CLINICAL)
+    return deid(text, masker.get_spans(text), cfg)
 
 
 # --------------------------------------------------------------------------
@@ -283,3 +287,56 @@ def test_line_and_note_output_stay_consistent():
     assert rdn.JOIN.join(masked_lines) == "Seen by [NAME] [NAME] today"
     # Each line is masked independently and covers its own span.
     assert masked_lines == ["Seen by [NAME]", "[NAME] today"]
+
+
+# --------------------------------------------------------------------------
+# comma-joined names (found in the scrubbed corpus, not by unit testing)
+# --------------------------------------------------------------------------
+
+@pytest.mark.parametrize("text,expected", [
+    ("1. [NAME],CHELLEE K Spouse", "1. [NAME] Spouse"),
+    ("Contact: [NAME], Robin M  Home Phone:", "Contact: [NAME]  Home Phone:"),
+])
+def test_given_name_after_a_masked_surname_is_caught(text, expected):
+    # "Klepp,Chellee K" -- the NER tags the surname and misses the given name,
+    # leaving a relative's first name in the clear.
+    assert rule_deid(text) == expected
+
+
+@pytest.mark.parametrize("text", [
+    "Latuda, Risperdal, Zyprexa, Geodon",   # drug list
+    "Amphetamines, Barbituates negative",   # tox screen panel
+    "Flaxseed, Linseed oil",
+    "Blood, Peripheral culture",
+    "Calcium, Vitamin D supplement",
+])
+def test_comma_lists_in_clinical_text_are_not_names(text):
+    # An unanchored "Word, Word" rule matches all of these. Redacting a tox
+    # panel would silently damage the study's exposure variables, so only the
+    # mask-anchored form is allowed.
+    assert rule_deid(text) == text
+
+
+# --------------------------------------------------------------------------
+# clinical content preservation (found by the paired before/after audit)
+# --------------------------------------------------------------------------
+
+@pytest.mark.parametrize("text", [
+    "UNABLE TO FIND Med Name: Morphine Clonodine Pain SQ Pump",
+    "Test Name: Candida Auris Surveillance PCR",
+    "Drug Name: Suboxone 8-2 mg SL film",
+    "Medication Name: buprenorphine-naloxone 8-2 mg",
+])
+def test_thing_name_labels_are_not_person_anchors(text):
+    # "Name:" is a person anchor, but "Med Name:" / "Test Name:" label a thing.
+    # Without the lookbehind the medication or lab test was redacted.
+    assert rule_deid(text) == text
+
+
+@pytest.mark.parametrize("text,expect_redacted", [
+    ("Patient Name: Jeremy Johnson  MRN: ___", True),
+    ("Contact Name: Maria Lopez", True),
+    ("Pt. Name/Age/DOB:  Patricia Anglano", True),
+])
+def test_person_name_anchors_still_fire(text, expect_redacted):
+    assert ("[NAME]" in rule_deid(text)) is expect_redacted
