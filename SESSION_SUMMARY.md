@@ -15,8 +15,8 @@ measured against the `IP_PATIENT_ID -> PAT_NAME` crosswalk in
 | `CREATE_BY` column | full provider name, cleartext, every row | same |
 
 The failures were structural, not random: template headers had the MRN and DOB
-stripped and the name left in place (`PATIENT: Jeremy ███  MRN: ___  DOB: ___`),
-and hyphenated surnames were half-redacted (`___-Prakash, MD`).
+stripped and the name left in place (`PATIENT: Alden ███  MRN: ___  DOB: ___`),
+and hyphenated surnames were half-redacted (`___-Thornbury, MD`).
 
 ## 2. What was built — `deid2` in /data2/fabricehc/deid
 
@@ -129,7 +129,7 @@ medical-examiner extract with 8,511 decedent names.
    clinicians open. I left the `*_annotated*` / `*_labelled*` ones alone since
    rewriting them risks damaging annotation work — your call.
 5. **One known residual**: a patient first name in narrative where the surname was
-   already masked (`___ Helene ___`). Space-separated, so the comma-anchored
+   already masked (`___ Ophira ___`). Space-separated, so the comma-anchored
    repair rule does not fire. 1 instance in 400,000 rows.
 6. **`deid` repo is committed but not pushed.** `provider_roster.txt` (7,188 real
    staff names) is gitignored and must stay that way.

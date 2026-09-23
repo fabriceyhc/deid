@@ -42,7 +42,7 @@ sturge klippel trenalunay von willebrand christmas hemophilia glanzmann bernard 
 evans diamond blackfan fanconi schwachman shwachman kostmann chediak higashi wiskott aldrich
 digeorge turner klinefelter down edwards patau prader willi angelman rett
 mallory weiss boerhaave zenker meckel hirschsprung whipple zollinger ellison
-gilbert dubin johnson rotor crigler najjar budd chiari caroli mirizzi
+gilbert dubin prescott rotor crigler najjar budd chiari caroli mirizzi
 wilms ewing burkitt waldenstrom richter sezary mycosis fungoides
 foley swan ganz jackson pratt penrose malecot pezzer blakemore sengstaken
 glasgow ranson apache charlson elixhauser braden morse norton framingham

@@ -52,7 +52,7 @@ NICKNAMES: Dict[str, Sequence[str]] = {
     "kenneth": ("ken", "kenny"),
     "edward": ("ed", "eddie", "ted", "teddy"),
     "timothy": ("tim", "timmy"),
-    "jeffrey": ("jeff",),
+    "devrim": ("jeff",),
     "gregory": ("greg",),
     "benjamin": ("ben", "benny"),
     "samuel": ("sam", "sammy"),
@@ -297,7 +297,7 @@ class RosterGazetteer:
                 return
             score = 0.85 if lower[start:end] in self.ambiguous else 1.0
             # Absorb an immediately preceding roster given name, so
-            # "Jeffrey Chung" becomes one span instead of a bare surname.
+            # "Devrim Ferrin" becomes one span instead of a bare surname.
             s = start
             prev = lower[max(0, start - 40):start]
             m = re.search(r"([A-Za-z][A-Za-z'\-]*)(?:\s+[A-Za-z]\.?)?[\s,]+$", prev)

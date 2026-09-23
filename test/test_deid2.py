@@ -22,7 +22,7 @@ def deid(text, spans, cfg=None):
     return mask(text, resolve(text, spans, CLINICAL, GENERAL, cfg))
 
 
-GIVEN = {"robin", "ruben", "jacqueline", "chellee", "gary", "susan", "emma"}
+GIVEN = {"robin", "ruben", "jacqueline", "marlowe", "gary", "susan", "emma"}
 
 
 def rule_deid(text, cfg=None, given=GIVEN):
@@ -139,12 +139,12 @@ def test_mask_collapse_is_linear_on_underscore_runs():
 # --------------------------------------------------------------------------
 
 @pytest.mark.parametrize("text,expected", [
-    ("PATIENT: Jeremy Johnson  MRN: ___", "PATIENT: [NAME]  MRN: ___"),
-    ("Pt. Name/Age/DOB:  Patricia Anglano   51 y.o.",
+    ("PATIENT: Alden Prescott  MRN: ___", "PATIENT: [NAME]  MRN: ___"),
+    ("Pt. Name/Age/DOB:  Patricia Brightwell   51 y.o.",
      "Pt. Name/Age/DOB:  [NAME]   51 y.o."),
-    ("Attending: Robert J. McDonald-Vance, MD", "Attending: [NAME], MD"),
-    ("Ms. Sabina McDonald is a 94 y.o. woman", "Ms. [NAME] is a [AGE] woman"),
-    ("___-Prakash, MD R3", "___-[NAME], MD R3"),
+    ("Attending: Robert J. McTavish-Vance, MD", "Attending: [NAME], MD"),
+    ("Ms. Ondine McTavish is a 94 y.o. woman", "Ms. [NAME] is a [AGE] woman"),
+    ("___-Thornbury, MD R3", "___-[NAME], MD R3"),
     ("Dr. O'Brien agreed", "Dr. [NAME] agreed"),
 ])
 def test_anchored_name_rules(text, expected):
@@ -178,7 +178,7 @@ def test_address_absorbs_trailing_locality():
 
 def test_roster_ignores_short_all_caps_acronyms():
     # "POA" (present on admission) collides with the surname Poa.
-    roster = RosterGazetteer(surnames=["poa", "chung"], givens=["jeffrey"])
+    roster = RosterGazetteer(surnames=["poa", "ferrin"], givens=["devrim"])
     assert roster.get_spans("Sepsis POA  Cellulitis") == []
 
 
@@ -189,10 +189,10 @@ def test_roster_requires_capitalisation():
 
 
 def test_roster_absorbs_preceding_given_name():
-    roster = RosterGazetteer(surnames=["chung"], givens=["jeffrey"])
-    t = "seen by Jeffrey Chung today"
+    roster = RosterGazetteer(surnames=["ferrin"], givens=["devrim"])
+    t = "seen by Devrim Ferrin today"
     spans = roster.get_spans(t)
-    assert t[spans[0].start:spans[0].end] == "Jeffrey Chung"
+    assert t[spans[0].start:spans[0].end] == "Devrim Ferrin"
 
 
 # --------------------------------------------------------------------------
@@ -234,7 +234,7 @@ def test_url_is_not_vetoed_by_the_allowlist():
 
 
 def test_upstream_underscore_markers_are_preserved():
-    t = "PATIENT: ___ Johnson  seen today"
+    t = "PATIENT: ___ Prescott  seen today"
     out = deid(t, [Span(13, 20, "NAME", "ner", 0.95)])
     assert out == "PATIENT: ___ [NAME]  seen today"
 
@@ -294,11 +294,11 @@ def test_line_and_note_output_stay_consistent():
 # --------------------------------------------------------------------------
 
 @pytest.mark.parametrize("text,expected", [
-    ("1. [NAME],CHELLEE K Spouse", "1. [NAME] Spouse"),
+    ("1. [NAME],MARLOWE K Spouse", "1. [NAME] Spouse"),
     ("Contact: [NAME], Robin M  Home Phone:", "Contact: [NAME]  Home Phone:"),
 ])
 def test_given_name_after_a_masked_surname_is_caught(text, expected):
-    # "Klepp,Chellee K" -- the NER tags the surname and misses the given name,
+    # "Danvers,Marlowe K" -- the NER tags the surname and misses the given name,
     # leaving a relative's first name in the clear.
     assert rule_deid(text) == expected
 
@@ -334,9 +334,9 @@ def test_thing_name_labels_are_not_person_anchors(text):
 
 
 @pytest.mark.parametrize("text,expect_redacted", [
-    ("Patient Name: Jeremy Johnson  MRN: ___", True),
+    ("Patient Name: Alden Prescott  MRN: ___", True),
     ("Contact Name: Maria Lopez", True),
-    ("Pt. Name/Age/DOB:  Patricia Anglano", True),
+    ("Pt. Name/Age/DOB:  Patricia Brightwell", True),
 ])
 def test_person_name_anchors_still_fire(text, expect_redacted):
     assert ("[NAME]" in rule_deid(text)) is expect_redacted

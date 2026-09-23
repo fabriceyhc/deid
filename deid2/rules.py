@@ -5,8 +5,8 @@ corpus rather than trying to be a general PHI regex suite:
 
   * names surviving next to a redacted MRN/DOB in template headers
     ("PATIENT: Jane Doe  MRN: ___")
-  * half-redacted hyphenated surnames ("___-Prakash, MD R3")
-  * credential-suffixed names ("Camille E. Ramirez, MSN")
+  * half-redacted hyphenated surnames ("___-Thornbury, MD R3")
+  * credential-suffixed names ("Rosalind E. Ramirez, MSN")
   * discharge street addresses and ZIPs the upstream pass left intact
   * month-name dates, pager/extension numbers, ages over 89
 
@@ -65,7 +65,7 @@ _RULES: List[Tuple[Pattern, str, int, bool]] = [
     (re.compile(rf"\b({NAME_SEQ})\s*,\s*(?:{CREDENTIALS})\b"), "NAME", 1, False),
     (re.compile(rf"\b({NAME_SEQ})\s+(?:{CREDENTIALS})\b(?!\s*[a-z])"), "NAME", 1, False),
     # "Surname,Given" is how contact and code-status fields are written
-    # ("Primary contact: Klepp,Chellee K"). The NER layer reliably tags the
+    # ("Primary contact: Danvers,Marlowe K"). The NER layer reliably tags the
     # surname and just as reliably misses the given name after the comma,
     # leaving a relative's first name in the clear.
     #
@@ -154,13 +154,13 @@ _NAME_TOKEN_SPLIT = re.compile(r"[ \t]+")
 _FOLLOWED_BY_COLON = re.compile(r"[ \t]*:")
 
 # Template headers put the patient's name immediately before a (redacted) MRN
-# or DOB field: "PATIENT:  Jeremy Johnson  MRN: ___". Anchoring on the field
+# or DOB field: "PATIENT:  Alden Prescott  MRN: ___". Anchoring on the field
 # label and looking back is far cheaper than scanning a name pattern at every
 # offset and rejecting it with a lookahead.
 _ID_FIELD = re.compile(r"\b(?:MRN|MR#|DOB|D\.O\.B\.?|Date\s+of\s+Birth)\b", re.I)
 
-# A given name surviving after a masked surname: "Klepp,Chellee K" becomes
-# "[NAME],CHELLEE K" when the NER tags the surname and misses the rest.
+# A given name surviving after a masked surname: "Danvers,Marlowe K" becomes
+# "[NAME],MARLOWE K" when the NER tags the surname and misses the rest.
 # Ungated, this pattern is overwhelmingly credentials -- "Jane Smith, PA-C"
 # leaves "[NAME], PA-C" -- so on a 2,000-note sample it fired 405 times and
 # only 3 were names. It is therefore gated on a known-given-name lookup, which
@@ -238,7 +238,7 @@ class ClinicalRuleMasker:
                 continue
             if key not in self.given_names:
                 # An unusual given name will not be in any name list
-                # ("CHELLEE", "MARYKE"). Accept a long all-caps token as a
+                # ("MARLOWE", "MARYKE"). Accept a long all-caps token as a
                 # fallback, but only unhyphenated: every credential that
                 # reaches here is hyphenated ("GNP-BC", "ACNP-BC", "NSCA-CPT")
                 # as is the one facility form ("UCLA-SM").

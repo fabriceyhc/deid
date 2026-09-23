@@ -193,7 +193,7 @@ against the `IP_PATIENT_ID -> PAT_NAME` crosswalk in `Patient_Identifiers.csv`:
 
 The failure is systematic rather than random. Template headers such as
 `PATIENT: <name>  MRN: ___  DOB: ___` had the MRN and DOB removed and the name
-left in place, and hyphenated surnames were half-redacted (`___-Prakash, MD`).
+left in place, and hyphenated surnames were half-redacted (`___-Thornbury, MD`).
 
 ## Design
 
